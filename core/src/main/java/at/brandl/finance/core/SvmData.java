@@ -1,5 +1,7 @@
 package at.brandl.finance.core;
 
+import java.util.Arrays;
+
 import libsvm.svm_node;
 import libsvm.svm_problem;
 
@@ -13,7 +15,7 @@ public class SvmData {
 	public SvmData(int numLines, int numFeatures) {
 		this.numLines = numLines;
 		labels = new double[numLines];
-		nodes = new svm_node[numLines][numFeatures];
+		nodes = new svm_node[numLines][];
 	}
 
 	public void setLabel(double value) {
@@ -22,10 +24,15 @@ public class SvmData {
 
 	public void setLine(int lineNo) {
 		this.lineNo = lineNo;
+		nodes[lineNo] = new svm_node[0];
 	}
 
 	public void addNode(svm_node node) {
-		nodes[lineNo][node.index - 1] = node;
+		
+		svm_node[] original = nodes[lineNo];
+		int length = original.length;
+		nodes[lineNo] = Arrays.copyOf(original, length+1);
+		nodes[lineNo][length] = node;
 	}
 
 	public int getSize() {
