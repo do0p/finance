@@ -2,11 +2,8 @@ package at.brandl.finance.core;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Formatter;
-import java.util.HashSet;
 import java.util.Locale;
-import java.util.Set;
 import java.util.StringTokenizer;
 
 import at.brandl.finance.common.Data;
