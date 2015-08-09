@@ -116,26 +116,22 @@ public class ScaleTest {
 		Assert.assertEquals(2, nodeSets2.size());
 		
 		List<Node> nodes21 = nodeSets2.get(0).getNodes();
-		Assert.assertEquals(8, nodes21.size());
+		Assert.assertEquals(6, nodes21.size());
 		assertNode(1, 1.0214592274678114, nodes21.get(0));
 		assertNode(2, -0.4606741573033708, nodes21.get(1));
 		assertNode(5, 1.0, nodes21.get(2));
 		assertNode(6, -1.0, nodes21.get(3));
 		assertNode(7, -1.0, nodes21.get(4));
-		assertNode(8, 1.0, nodes21.get(5));
-		assertNode(10, -1.0, nodes21.get(6));
-		assertNode(11, 1.0, nodes21.get(7));
+		assertNode(10, -1.0, nodes21.get(5));
 		
 		List<Node> nodes22 = nodeSets2.get(1).getNodes();
-		Assert.assertEquals(8, nodes22.size());
+		Assert.assertEquals(6, nodes22.size());
 		assertNode(1, -1.2103004291845494, nodes22.get(0));
 		assertNode(2, -0.4606741573033708, nodes22.get(1));
 		assertNode(5, 1.0, nodes22.get(2));
 		assertNode(6, -1.0, nodes22.get(3));
 		assertNode(7, -1.0, nodes22.get(4));
-		assertNode(8, -1.0, nodes22.get(5));
-		assertNode(10, -1.0, nodes22.get(6));
-		assertNode(11, -1.0, nodes22.get(7));
+		assertNode(10, -1.0, nodes22.get(5));
 	}
 	
 	

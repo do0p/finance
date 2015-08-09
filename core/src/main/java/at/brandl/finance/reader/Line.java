@@ -5,12 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Line {
+	
 	private int day;
 	private int month;
 	private int weekDay;
 	private List<String> words = new ArrayList<>();
 	private BigDecimal amount;
 	private String label;
+	private boolean confirmed;
 
 	public int getDay() {
 		return day;
@@ -58,6 +60,14 @@ public class Line {
 
 	public void setLabel(String label) {
 		this.label = label;
+	}
+
+	public boolean isConfirmed() {
+		return confirmed;
+	}
+
+	public void setConfirmed(boolean confirmed) {
+		this.confirmed = confirmed;
 	}
 
 }

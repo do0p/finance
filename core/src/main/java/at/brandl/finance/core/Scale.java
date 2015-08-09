@@ -65,8 +65,7 @@ public class Scale {
 				StringTokenizer tokenizer = new StringTokenizer(
 						fpRestore.readLine());
 				int idx = Integer.parseInt(tokenizer.nextToken());
-				maxIndex = Math.max(maxIndex,
-						idx);
+				maxIndex = Math.max(maxIndex, idx);
 			}
 			fpRestore.rewind();
 		}
@@ -98,40 +97,6 @@ public class Scale {
 			featureMin[i] = Double.MAX_VALUE;
 		}
 
-		while (fp.ready()) {
-
-			int nextIndex = 1;
-
-			StringTokenizer tokenizer = new StringTokenizer(fp.readLine(),
-					" \t\n\r\f:");
-			tokenizer.nextToken();
-
-			while (tokenizer.hasMoreTokens()) {
-
-				int index = Integer.parseInt(tokenizer.nextToken());
-				double value = Double.parseDouble(tokenizer.nextToken());
-
-				for (int i = nextIndex; i < index; i++) {
-
-					featureMax[i] = Math.max(featureMax[i], 0);
-					featureMin[i] = Math.min(featureMin[i], 0);
-				}
-
-				featureMax[index] = Math.max(featureMax[index], value);
-				featureMin[index] = Math.min(featureMin[index], value);
-
-				nextIndex = index + 1;
-			}
-
-			for (int i = nextIndex; i <= maxIndex; i++) {
-
-				featureMax[i] = Math.max(featureMax[i], 0);
-				featureMin[i] = Math.min(featureMin[i], 0);
-			}
-		}
-
-		fp.rewind();
-
 		if (fpRestore != null) {
 
 			if (fpRestore.read() == 'x') {
@@ -157,6 +122,41 @@ public class Scale {
 			}
 
 			fpRestore.close();
+		} else {
+
+			while (fp.ready()) {
+
+				int nextIndex = 1;
+
+				StringTokenizer tokenizer = new StringTokenizer(fp.readLine(),
+						" \t\n\r\f:");
+				tokenizer.nextToken();
+
+				while (tokenizer.hasMoreTokens()) {
+
+					int index = Integer.parseInt(tokenizer.nextToken());
+					double value = Double.parseDouble(tokenizer.nextToken());
+
+					for (int i = nextIndex; i < index; i++) {
+
+						featureMax[i] = Math.max(featureMax[i], 0);
+						featureMin[i] = Math.min(featureMin[i], 0);
+					}
+
+					featureMax[index] = Math.max(featureMax[index], value);
+					featureMin[index] = Math.min(featureMin[index], value);
+
+					nextIndex = index + 1;
+				}
+
+				for (int i = nextIndex; i <= maxIndex; i++) {
+
+					featureMax[i] = Math.max(featureMax[i], 0);
+					featureMin[i] = Math.min(featureMin[i], 0);
+				}
+			}
+
+			fp.rewind();
 		}
 	}
 
@@ -219,9 +219,11 @@ public class Scale {
 		double min = featureMin[index];
 		double max = featureMax[index];
 
-		if (max == min) {
-			value = lower;
-		} else if (value == min) {
+		if (max == min || min == Double.MAX_VALUE) {
+			return;
+		}
+
+		if (value == min) {
 			value = lower;
 		} else if (value == max) {
 			value = upper;

@@ -32,14 +32,12 @@ public class CsvReaderTest {
 	public void csvReader() {
 		reader.parse(inputStream);
 		Iterator<Line> lines = reader.getLines();
-		while (lines.hasNext()) {
 			Line line = lines.next();
 			assertEquals(30, line.getDay());
 			assertEquals(2, line.getMonth());
 			assertEquals(2, line.getWeekDay());
 			assertEquals(-52.44, line.getAmount().doubleValue(), 0);
-			assertEquals(Arrays.asList("at", "maestro", "pos", "bp", "hainfelderstr", "boeheimkirche"), line.getWords());
-		}
+			assertEquals(Arrays.asList("at", "52", "44", "maestro", "pos", "27", "03", "15", "18", "29k6", "bp", "hainfelderstr", "boeheimkirche", "3071"), line.getWords());
 	}
 
 	@After

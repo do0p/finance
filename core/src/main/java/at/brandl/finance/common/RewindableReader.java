@@ -2,7 +2,7 @@ package at.brandl.finance.common;
 
 import java.io.IOException;
 
-public interface RewindableReader extends Readable {
+public interface RewindableReader  {
 
 	void rewind() throws IOException;
 
