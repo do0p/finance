@@ -1,7 +1,11 @@
 package at.brandl.finance.application;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 import junit.framework.Assert;
 
@@ -9,6 +13,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import at.brandl.finance.reader.CsvReader;
+import at.brandl.finance.reader.Line;
 
 public class ProjectTest {
 
@@ -29,7 +34,48 @@ public class ProjectTest {
 			reader.parse(is);
 			project.readData(reader);
 		}
-		Journal journal = project.getJournal();
-		Assert.assertEquals(159, journal.size());
+		Assert.assertEquals(159,  project.getSize());
+	}
+	
+	@Test
+	public void changes() throws IOException {
+		
+		Assert.assertFalse(project.hasChanges());
+		
+		importData();
+		Assert.assertTrue(project.hasChanges());
+		
+		project.markUnchanged();
+		Assert.assertFalse(project.hasChanges());
+		
+		Line line = project.getLine(0);
+		Assert.assertFalse(project.hasChanges());
+		
+		line.setLabel("bla");
+		Assert.assertTrue(project.hasChanges());
+		
+		project.markUnchanged();
+		Assert.assertFalse(project.hasChanges());
+		
+		line.setLabel("bla");
+		Assert.assertFalse(project.hasChanges());
+	}
+	
+	@Test
+	public void serialize() throws IOException, ClassNotFoundException {
+
+		ByteArrayOutputStream out = new ByteArrayOutputStream();
+		try (ObjectOutputStream os = new ObjectOutputStream(out)) {
+
+			os.writeObject(project);
+		}
+
+		Project deserializedProject;
+		try (ObjectInputStream is = new ObjectInputStream(new ByteArrayInputStream(out.toByteArray()))) {
+			
+			deserializedProject = (Project) is.readObject();
+		}
+		
+		Assert.assertEquals(project.getName(), deserializedProject.getName());
 	}
 }

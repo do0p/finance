@@ -1,5 +1,7 @@
 package at.brandl.finance.core;
 
-public interface Model {
+import java.io.Serializable;
+
+public interface Model extends Serializable {
 
 }

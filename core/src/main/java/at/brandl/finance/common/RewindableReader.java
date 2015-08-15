@@ -1,8 +1,9 @@
 package at.brandl.finance.common;
 
 import java.io.IOException;
+import java.io.Serializable;
 
-public interface RewindableReader  {
+public interface RewindableReader extends Serializable {
 
 	void rewind() throws IOException;
 

@@ -2,16 +2,24 @@ package at.brandl.finance.application;
 
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
 import at.brandl.finance.application.error.NoProjectSelectedException;
 import at.brandl.finance.application.error.NoSuchProjectFoundException;
+import at.brandl.finance.application.error.ProjectWithUnsafedChangesException;
+import at.brandl.finance.application.error.UnknownProjectFileFormatException;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Data;
 import at.brandl.finance.common.RewindableReader;
@@ -119,7 +127,7 @@ public class Application {
 	public void confirmAllLabeled() {
 
 		assertProjectSelected();
-		
+
 		project.confirmAllLabeled();
 	}
 
@@ -130,6 +138,58 @@ public class Application {
 		return project.getUnlabeledLines();
 	}
 
+	public Line getLine(int index) {
+
+		assertProjectSelected();
+		return project.getLine(index);
+	}
+
+	public int getNumLines() {
+
+		assertProjectSelected();
+		return project.getNumLines();
+	}
+
+	public String[] getLabels() {
+
+		return project.getLabels();
+	}
+
+	public List<Line> getUnconfirmedLines() {
+
+		assertProjectSelected();
+
+		return project.getUnconfirmedLines();
+	}
+
+	public void saveToFile(String filename) throws IOException {
+		
+		assertProjectSelected();
+		
+		try(OutputStream os = new GZIPOutputStream(new FileOutputStream(filename))) {
+			
+			project.markUnchanged();
+			new ObjectOutputStream(os).writeObject(project);
+		}
+	}
+	
+	public void readFromFile(String filename, boolean force) throws IOException {
+		
+		if(!force) {
+			if(project != null && project.hasChanges()) {
+				throw new ProjectWithUnsafedChangesException();
+			}
+		}
+		
+		try(InputStream is = new GZIPInputStream(new FileInputStream(filename))) {
+			
+			project = (Project) new ObjectInputStream(is).readObject();
+		} catch (Exception e) {
+			throw new UnknownProjectFileFormatException(e);
+		}
+	}
+	
+	
 	private void assertProjectSelected() {
 
 		if (project == null) {
@@ -163,30 +223,6 @@ public class Application {
 				wordFeatures);
 		reader.addLine(nodeStr);
 		return reader;
-	}
-
-	public Line getLine(int index) {
-
-		assertProjectSelected();
-		return project.getLine(index);
-	}
-
-	public int getNumLines() {
-
-		assertProjectSelected();
-		return project.getNumLines();
-	}
-
-	public String[] getLabels() {
-
-		return project.getLabels();
-	}
-
-	public List<Line> getUnconfirmedLines() {
-
-		assertProjectSelected();
-
-		return project.getUnconfirmedLines();
 	}
 
 }

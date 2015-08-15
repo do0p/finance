@@ -8,7 +8,8 @@ import java.nio.CharBuffer;
 
 public class RewindableFileReader implements RewindableReader {
 
-	private BufferedReader reader;
+	private static final long serialVersionUID = 4004685227494044716L;
+	private transient BufferedReader reader;
 	private final String filename;
 
 	public RewindableFileReader(String filename) throws FileNotFoundException {
@@ -78,4 +79,10 @@ public class RewindableFileReader implements RewindableReader {
 		return reader.readLine();
 	}
 	
+	 private void readObject(java.io.ObjectInputStream in)
+		     throws IOException, ClassNotFoundException {
+		 in.defaultReadObject();
+		 this.reader = new BufferedReader(new FileReader(filename));
+	 }
+
 }

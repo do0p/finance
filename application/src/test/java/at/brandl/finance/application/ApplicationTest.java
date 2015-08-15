@@ -71,6 +71,23 @@ public class ApplicationTest {
 		Assert.assertNotNull(predict.getLabel());
 		Assert.assertFalse(predict.getConfidence() <= 0);
 	}
+	
+	@Test
+	public void serialize() throws IOException {
+		
+		train();
+		String saveFile = getTestFile("save.fdt");
+		application.saveToFile(saveFile);
+		
+		application = new Application();
+		application.readFromFile(saveFile, false);
+		
+		Line line = createLine();
+		Prediction predict = application.predict(line);
+		Assert.assertNotNull(predict.getLabel());
+		Assert.assertFalse(predict.getConfidence() <= 0);
+		
+	}
 
 	private Line createLine() {
 

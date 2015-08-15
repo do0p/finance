@@ -6,6 +6,7 @@ import java.util.List;
 
 public class RewindableStringReader implements RewindableReader {
 
+	private static final long serialVersionUID = -6236056523925049333L;
 	private final List<String> lines = new ArrayList<String>();
 	private int lineNo = 0;
 
