@@ -103,4 +103,33 @@ public class Project {
 		return journal.getUnlabeled();
 	}
 
+
+	public Line getLine(int index) {
+
+		return journal.getLine(index);
+	}
+
+
+	public int getNumLines() {
+
+		return journal.getNumLines();
+	}
+
+
+	public List<Line> getConfirmedLines() {
+
+		return journal.getConfirmedLines();
+	}
+
+
+	public List<Line> getUnconfirmedLines() {
+
+		return journal.getUnconfirmedLines();
+	}
+
+
+	public void confirmAllLabeled() {
+		
+		journal.confirmAllLabeled();		
+	}
 }

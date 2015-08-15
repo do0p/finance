@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Line {
-	
+
 	private int day;
 	private int month;
 	private int weekDay;
@@ -13,6 +13,7 @@ public class Line {
 	private BigDecimal amount;
 	private String label;
 	private boolean confirmed;
+	private double confidence;
 
 	public int getDay() {
 		return day;
@@ -70,4 +71,14 @@ public class Line {
 		this.confirmed = confirmed;
 	}
 
+	@Override
+	public String toString() {
+
+		return label + " " + words + " " + confidence + " " + confirmed;
+	}
+
+	public void setConfidence(double confidence) {
+		
+		this.confidence = confidence;
+	}
 }

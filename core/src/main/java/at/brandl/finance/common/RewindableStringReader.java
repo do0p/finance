@@ -26,8 +26,7 @@ public class RewindableStringReader implements RewindableReader {
 
 	@Override
 	public void close() throws IOException {
-		lineNo = 0;
-		lines.clear();
+		rewind();
 	}
 
 	@Override

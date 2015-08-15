@@ -1,5 +1,7 @@
 package at.brandl.finance.core;
 
+import static at.brandl.finance.utils.TestProperties.getTestFile;
+
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
@@ -19,11 +21,10 @@ import at.brandl.finance.common.NodeSet;
 import at.brandl.finance.common.RewindableFileReader;
 import at.brandl.finance.common.RewindableReader;
 import at.brandl.finance.common.RewindableStringReader;
-import at.brandl.finance.utils.Constants;
 
 public class ScaleTest {
 
-	private static final String DATA_FILENAME = Constants.DIR + "core\\test2.txt";
+	private static final String DATA_FILENAME = getTestFile("test2.txt");
 	private static final String SAVE_FILENAME = DATA_FILENAME + ".scale";
 	
 	private Scale scale;

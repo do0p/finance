@@ -1,4 +1,4 @@
-package at.brandl.finance.application;
+package at.brandl.finance.application.error;
 
 public class NoSuchProjectFoundException extends IllegalArgumentException {
 

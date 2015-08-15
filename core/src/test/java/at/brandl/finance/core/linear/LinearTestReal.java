@@ -1,10 +1,11 @@
 package at.brandl.finance.core.linear;
 
+import static at.brandl.finance.utils.TestProperties.getTestFile;
 
 public class LinearTestReal extends AbstractLinearTest {
 
-	private static final String DATA_FILENAME = DIR + "core\\test2.txt";
-	private static final String INPUT_FILENAME = DIR + "core\\cv2.txt";
+	private static final String DATA_FILENAME = getTestFile("test2.txt");
+	private static final String INPUT_FILENAME = getTestFile("cv2.txt");
 	private static final String SAVE_FILENAME = DATA_FILENAME + ".scale";
 
 	protected String getValidationFileName() {

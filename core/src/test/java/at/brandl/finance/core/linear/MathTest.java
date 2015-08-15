@@ -1,5 +1,7 @@
 package at.brandl.finance.core.linear;
 
+import static at.brandl.finance.utils.TestProperties.getTestFile;
+
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import org.apache.commons.math3.optim.nonlinear.scalar.gradient.NonLinearConjuga
 import org.apache.commons.math3.optim.nonlinear.scalar.gradient.NonLinearConjugateGradientOptimizer.Formula;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import at.brandl.finance.common.Data;
@@ -33,12 +36,10 @@ import at.brandl.finance.common.Node;
 import at.brandl.finance.common.NodeSet;
 import at.brandl.finance.common.RewindableFileReader;
 import at.brandl.finance.core.Scale;
-import at.brandl.finance.utils.Constants;
 
 public class MathTest {
 
-	protected static final String DIR = Constants.DIR;
-	private static final String DATA_FILENAME = DIR + "core\\test2.txt";
+	private static final String DATA_FILENAME = getTestFile("test2.txt");
 	private static final String SAVE_FILENAME = DATA_FILENAME + ".scale";
 
 	private static final double UPPER = 1;
@@ -76,6 +77,7 @@ public class MathTest {
 	}
 
 	@Test
+	@Ignore
 	public void optimize() throws IOException {
 		Data data = createData();
 		List<Double> labels = data.getLabels();
@@ -94,11 +96,12 @@ public class MathTest {
 			problem[1] = createFunctionGradient(data, label);
 			problem[2] = GoalType.MINIMIZE;
 			problem[3] = new InitialGuess(toArray(nodeSets.get(0)));
-	
+
 			problem[5] = new MaxEval(10000);
 			problem[6] = new MaxIter(10000);
 			PointValuePair optimum = optimizer.optimize(problem);
-			System.out.println(label + ": " + Arrays.toString(optimum.getPoint()));
+			System.out.println(label + ": "
+					+ Arrays.toString(optimum.getPoint()));
 		}
 	}
 
@@ -130,7 +133,6 @@ public class MathTest {
 				new BufferedWriter(new FileWriter(SAVE_FILENAME)), null, LOWER,
 				UPPER);
 	}
-
 
 	private double[] calcExpected(Double label, List<Double> labels) {
 		double[] values = new double[labels.size()];

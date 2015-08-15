@@ -10,11 +10,10 @@ import org.junit.Test;
 import at.brandl.finance.common.Data;
 import at.brandl.finance.common.NodeSet;
 import at.brandl.finance.common.RewindableFileReader;
-import at.brandl.finance.utils.Constants;
 
 public abstract class AbstractMaschineLearningTest<T extends Model> {
 
-	protected static final String DIR = Constants.DIR;
+	
 
 	@Test
 	public void learn() throws IOException {

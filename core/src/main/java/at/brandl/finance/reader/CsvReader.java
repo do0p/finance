@@ -69,7 +69,7 @@ public class CsvReader implements FinanceDataReader {
 			char character = (char) reader.read();
 			boolean fieldEnd = character == ';';
 			boolean lineEnd = colNo + 1 == columns.length
-					&& character == '\n';
+					&& (fieldEnd || character == '\n'  || character == '\r');
 
 			if (fieldEnd || lineEnd) {
 
@@ -77,6 +77,9 @@ public class CsvReader implements FinanceDataReader {
 
 				if (lineEnd) {
 					lines.add(line);
+					while(character != '\n' && reader.ready()) {
+						character = (char) reader.read();
+					}
 					break;
 				}
 
@@ -94,7 +97,7 @@ public class CsvReader implements FinanceDataReader {
 
 		try {
 
-			switch (column) {
+			switch (column.trim()) {
 
 			case DATE:
 
@@ -130,7 +133,7 @@ public class CsvReader implements FinanceDataReader {
 
 	private void parseText(String data, Line line) {
 		StringTokenizer tokenizer = new StringTokenizer(data,
-				" \t\n\r\f.,:/");
+				" \"\t\n\r\f.,:/");
 		while (tokenizer.hasMoreTokens()) {
 			String token = tokenizer.nextToken().toLowerCase();
 			if (token.matches("[-a-zäöüß0-9]{2,}")) {

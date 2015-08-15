@@ -10,6 +10,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import at.brandl.finance.application.error.NoProjectSelectedException;
+import at.brandl.finance.application.error.NoSuchProjectFoundException;
+import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Data;
 import at.brandl.finance.common.RewindableReader;
 import at.brandl.finance.common.RewindableStringReader;
@@ -76,14 +79,11 @@ public class Application {
 		}
 	}
 
-	public void train(Line... lines) {
+	public void train() {
 
 		assertProjectSelected();
 
-		List<Line> labeled = project.getLabeledLines();
-		for (Line line : lines) {
-			labeled.add(line);
-		}
+		List<Line> labeled = project.getConfirmedLines();
 
 		try (StringWriter out = new StringWriter()) {
 
@@ -108,7 +108,7 @@ public class Application {
 	public int loadData(String fileName) throws IOException {
 
 		assertProjectSelected();
-		
+
 		try (InputStream is = new FileInputStream(fileName)) {
 			CsvReader reader = new CsvReader();
 			reader.parse(is);
@@ -116,13 +116,20 @@ public class Application {
 		}
 	}
 
-	public List<Line> getUnlabeledLines() {
-		
+	public void confirmAllLabeled() {
+
 		assertProjectSelected();
 		
-		return project.getUnlabeledLines(); 
+		project.confirmAllLabeled();
 	}
-	
+
+	public List<Line> getUnlabeledLines() {
+
+		assertProjectSelected();
+
+		return project.getUnlabeledLines();
+	}
+
 	private void assertProjectSelected() {
 
 		if (project == null) {
@@ -156,6 +163,30 @@ public class Application {
 				wordFeatures);
 		reader.addLine(nodeStr);
 		return reader;
+	}
+
+	public Line getLine(int index) {
+
+		assertProjectSelected();
+		return project.getLine(index);
+	}
+
+	public int getNumLines() {
+
+		assertProjectSelected();
+		return project.getNumLines();
+	}
+
+	public String[] getLabels() {
+
+		return project.getLabels();
+	}
+
+	public List<Line> getUnconfirmedLines() {
+
+		assertProjectSelected();
+
+		return project.getUnconfirmedLines();
 	}
 
 }

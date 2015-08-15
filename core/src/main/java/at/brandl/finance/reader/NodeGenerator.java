@@ -3,7 +3,6 @@ package at.brandl.finance.reader;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -19,7 +18,7 @@ public class NodeGenerator {
 	public String createNodeString(Line line, String[] wordFeatures) {
 
 		Map<Integer, Double> nodes = createNodeEntries(line, wordFeatures);
-		nodes.put(0,0d);
+		nodes.put(0, 0d);
 		return createNodeString(nodes);
 	}
 
@@ -38,8 +37,10 @@ public class NodeGenerator {
 					wordFeatures);
 			if (writeLabels) {
 				String label = line.getLabel();
-				features.put(0,
-						Double.valueOf(Arrays.binarySearch(labels, label)));
+				int index = Arrays.binarySearch(labels, label);
+				if (index >= 0) {
+					features.put(0, Double.valueOf(index));
+				}
 			}
 
 			nodes.add(features);
@@ -72,7 +73,9 @@ public class NodeGenerator {
 				Double.valueOf(line.getAmount().doubleValue()));
 		for (String word : line.getWords()) {
 			int pos = Arrays.binarySearch(wordFeatures, word);
-			features.put(pos + featureNo, 1d);
+			if (pos >= 0) {
+				features.put(pos + featureNo, 1d);
+			}
 		}
 		return features;
 	}
@@ -107,7 +110,7 @@ public class NodeGenerator {
 
 	private String[] collectFeatures(Iterable<Line> lines) {
 
-		Map<String, Integer> features = new HashMap<String, Integer>();
+		Map<String, Integer> features = new TreeMap<String, Integer>();
 		for (Line line : lines) {
 			for (String word : line.getWords()) {
 				Integer count = features.get(word);

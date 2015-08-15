@@ -1,5 +1,7 @@
 package at.brandl.finance.reader;
 
+import static at.brandl.finance.utils.TestProperties.getTestFile;
+
 import java.io.ByteArrayOutputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -10,10 +12,8 @@ import java.io.OutputStream;
 import org.junit.Before;
 import org.junit.Test;
 
-import at.brandl.finance.utils.Constants;
-
 public class TestFileGeneratorTest {
-	private static final String FILENAME = Constants.DIR + "reader\\test.csv";
+	private static final String FILENAME = getTestFile("test.csv");
 	private InputStream inputStream;
 	private FinanceDataReader reader;
 
