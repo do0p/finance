@@ -10,8 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import org.apache.commons.math3.util.FastMath;
-
 public class Line implements Serializable {
 
 	private static final long serialVersionUID = -3246424997352032221L;
