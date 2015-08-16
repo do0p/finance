@@ -10,6 +10,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 
+import at.brandl.finance.common.Line;
+
 public class NodeGenerator {
 
 	private String[] wordFeatures;
@@ -66,11 +68,16 @@ public class NodeGenerator {
 
 		// String value = new BufferedReader(new
 		// InputStreamReader(System.in)).readLine();
-		features.put(featureNo++, Double.valueOf(line.getDay()));
-		features.put(featureNo++, Double.valueOf(line.getMonth()));
-		features.put(featureNo++, Double.valueOf(line.getWeekDay()));
-		features.put(featureNo++,
-				Double.valueOf(line.getAmount().doubleValue()));
+//		features.put(featureNo++, Double.valueOf(line.getDay()));
+//		features.put(featureNo++, Double.valueOf(line.getMonth()));
+//		features.put(featureNo++, Double.valueOf(line.getWeekDay()));
+//		features.put(featureNo++,
+//				Double.valueOf(line.getAmount().doubleValue()));
+		features.put(featureNo++, line.isExpense() ? 1d : 0d);
+		int magnitude = line.getMagnitude();
+		for(int i = 0; i < 12; i++) {
+			features.put(featureNo++, i == magnitude ? 1d : 0d);
+		}
 		for (String word : line.getWords()) {
 			int pos = Arrays.binarySearch(wordFeatures, word);
 			if (pos >= 0) {

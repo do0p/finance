@@ -5,6 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -18,14 +19,12 @@ import java.util.Iterator;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
+import at.brandl.finance.common.Line;
+
 public class CsvReader implements FinanceDataReader {
 
 	private static final String SEPARATOR = "\\s*;\\s*";
-	private static final String DATE = "Valutadatum";
-	private static final String AMOUNT = "Betrag";
-	private static final String TEXT = "Buchungstext";
-	private static final String REASON = "Zahlungsgrund";
-	private static final String LABEL = "Kategorie";
+
 	private final Collection<Line> lines = new ArrayList<>();
 	private final DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
 	private final NumberFormat numberFormat = NumberFormat
@@ -59,7 +58,7 @@ public class CsvReader implements FinanceDataReader {
 
 	private void parseLine(BufferedReader reader, String[] columns)
 			throws IOException {
-		
+
 		int colNo = 0;
 		StringBuffer buffer = new StringBuffer();
 		Line line = new Line();
@@ -69,7 +68,7 @@ public class CsvReader implements FinanceDataReader {
 			char character = (char) reader.read();
 			boolean fieldEnd = character == ';';
 			boolean lineEnd = colNo + 1 == columns.length
-					&& (fieldEnd || character == '\n'  || character == '\r');
+					&& (fieldEnd || character == '\n' || character == '\r');
 
 			if (fieldEnd || lineEnd) {
 
@@ -77,7 +76,7 @@ public class CsvReader implements FinanceDataReader {
 
 				if (lineEnd) {
 					lines.add(line);
-					while(character != '\n' && reader.ready()) {
+					while (character != '\n' && reader.ready()) {
 						character = (char) reader.read();
 					}
 					break;
@@ -87,7 +86,7 @@ public class CsvReader implements FinanceDataReader {
 				colNo++;
 
 			} else {
-				
+
 				buffer.append(character);
 			}
 		}
@@ -97,7 +96,9 @@ public class CsvReader implements FinanceDataReader {
 
 		try {
 
-			switch (column.trim()) {
+			column = column.trim();
+			data = cleanUp(data);
+			switch (column) {
 
 			case DATE:
 
@@ -111,7 +112,8 @@ public class CsvReader implements FinanceDataReader {
 
 			case TEXT:
 			case REASON:
-
+				
+				line.putText(column, data);
 				parseText(data, line);
 				break;
 
@@ -127,33 +129,46 @@ public class CsvReader implements FinanceDataReader {
 		}
 	}
 
+	private String cleanUp(String column) {
+		
+		column = column.trim();
+		if (column.startsWith("\"") && column.endsWith("\"")) {
+			column = column.substring(1, column.length() - 1);
+		}
+		return column;
+	}
+
 	private void parseLabel(String data, Line line) {
+		
 		line.setLabel(data);
 	}
 
 	private void parseText(String data, Line line) {
-		StringTokenizer tokenizer = new StringTokenizer(data,
-				" \"\t\n\r\f.,:/");
+		
+		StringTokenizer tokenizer = new StringTokenizer(data, " \"\t\n\r\f.,:/");
 		while (tokenizer.hasMoreTokens()) {
 			String token = tokenizer.nextToken().toLowerCase();
-			if (token.matches("[-a-zäöüß0-9]{2,}")) {
+			if (token.matches("[-a-zäöüß]{2,}")) {
 				line.addWord(token);
 			}
 		}
 	}
 
 	private void parseAmount(String data, Line line) throws ParseException {
+		
 		Number number = numberFormat.parse(data);
 		line.setAmount(new BigDecimal(number.doubleValue()));
 	}
 
 	private void parseDate(String data, Line line) throws ParseException {
+
 		Date date = dateFormat.parse(data);
 		calendar.setTime(date);
 
-		line.setDay(calendar.get(Calendar.DAY_OF_MONTH));
-		line.setWeekDay(calendar.get(Calendar.DAY_OF_WEEK));
-		line.setMonth(calendar.get(Calendar.MONTH));
+		line.setDate(date);
+//		line.setDay(calendar.get(Calendar.DAY_OF_MONTH));
+//		line.setWeekDay(calendar.get(Calendar.DAY_OF_WEEK));
+//		line.setMonth(calendar.get(Calendar.MONTH));
 	}
 
 	@Override

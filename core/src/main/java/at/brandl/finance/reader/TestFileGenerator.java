@@ -8,6 +8,8 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
+import at.brandl.finance.common.Line;
+
 public class TestFileGenerator {
 
 	private final NodeGenerator nodeGenerator = new NodeGenerator();

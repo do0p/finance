@@ -4,10 +4,10 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 
+import at.brandl.finance.common.Line;
 import at.brandl.finance.common.RewindableReader;
 import at.brandl.finance.core.linear.LinearModel;
 import at.brandl.finance.reader.FinanceDataReader;
-import at.brandl.finance.reader.Line;
 
 public class Project implements Serializable {
 
@@ -145,5 +145,15 @@ public class Project implements Serializable {
 	public int getSize() {
 
 		return journal.getNumLines();
+	}
+
+	public void setSort(String column, boolean up) {
+
+		journal.setSort(column, up);
+	}
+	
+	public void sort() {
+		
+		journal.sort();
 	}
 }

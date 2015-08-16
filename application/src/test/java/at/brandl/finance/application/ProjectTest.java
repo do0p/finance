@@ -12,8 +12,8 @@ import junit.framework.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
+import at.brandl.finance.common.Line;
 import at.brandl.finance.reader.CsvReader;
-import at.brandl.finance.reader.Line;
 
 public class ProjectTest {
 

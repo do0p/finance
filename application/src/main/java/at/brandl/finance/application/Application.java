@@ -32,6 +32,7 @@ import at.brandl.finance.application.error.TrainingFailedException;
 import at.brandl.finance.application.error.UnknownProjectFileFormatException;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Data;
+import at.brandl.finance.common.Line;
 import at.brandl.finance.common.RewindableReader;
 import at.brandl.finance.common.RewindableStringReader;
 import at.brandl.finance.core.Core;
@@ -39,7 +40,6 @@ import at.brandl.finance.core.Scale;
 import at.brandl.finance.core.linear.LinearCore;
 import at.brandl.finance.core.linear.LinearModel;
 import at.brandl.finance.reader.CsvReader;
-import at.brandl.finance.reader.Line;
 import at.brandl.finance.reader.NodeGenerator;
 
 public class Application {
@@ -54,7 +54,7 @@ public class Application {
 	private final Map<String, Project> projects = new HashMap<>();
 	private final Collection<TrainingListener> trainingListeners = new CopyOnWriteArrayList<Application.TrainingListener>();
 	private final Executor executor = Executors.newSingleThreadExecutor();
-	
+
 	private final Core<LinearModel> core = new LinearCore();
 	private Project project;
 
@@ -115,65 +115,20 @@ public class Application {
 		}
 
 		try (StringWriter out = new StringWriter()) {
-		
+
 			NodeGenerator nodeGenerator = new NodeGenerator();
 			List<String> nodeStrings = nodeGenerator.createNodeStrings(lines);
 			BufferedWriter saveFile = new BufferedWriter(out);
 			RewindableStringReader reader = createReader(nodeStrings);
 			Data data = new Scale(reader, saveFile, null, LOWER, UPPER).scale();
-		
+
 			FutureTask<LinearModel> future = scheduleTraining(data);
-		
+
 			notifyListners(future, nodeGenerator, out);
-		
+
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-
-	private FutureTask<LinearModel> scheduleTraining(Data data) {
-		FutureTask<LinearModel> future = new FutureTask<LinearModel>(
-				new Callable<LinearModel>() {
-
-					@Override
-					public LinearModel call() throws Exception {
-
-						return core.train(data);
-					}
-				});
-
-		executor.execute(future);
-		return future;
-	}
-
-
-	private void notifyListners(FutureTask<LinearModel> future,
-			NodeGenerator nodeGenerator, StringWriter out) {
-
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				LinearModel model;
-				try {
-					model = future.get();
-				} catch (Exception e) {
-
-					throw new TrainingFailedException(e);
-				} 
-
-				project.setModel(model);
-				project.setLabels(nodeGenerator.getLabels());
-				project.setWordFeatures(nodeGenerator.getWordFeatures());
-				project.setRestore(createRestore(out));
-
-				for (TrainingListener listener : trainingListeners) {
-					listener.finished(project);
-				}
-
-			}
-		}).start();
-
 	}
 
 	public int loadData(String fileName) throws IOException {
@@ -225,7 +180,7 @@ public class Application {
 		return project.getUnconfirmedLines();
 	}
 
-	public void saveToFile(String filename)  {
+	public void saveToFile(String filename) {
 
 		assertProjectSelected();
 
@@ -239,7 +194,7 @@ public class Application {
 		}
 	}
 
-	public void readFromFile(String filename, boolean force)  {
+	public void readFromFile(String filename, boolean force) {
 
 		if (!force) {
 			if (project != null && project.hasChanges()) {
@@ -253,11 +208,83 @@ public class Application {
 		} catch (FileNotFoundException e) {
 
 			throw new OpenProjectFailedException(e);
-			
+
 		} catch (Exception e) {
 
 			throw new UnknownProjectFileFormatException(e);
-		} 
+		}
+	}
+
+	public void addTrainListener(TrainingListener trainingListener) {
+
+		trainingListeners.add(trainingListener);
+	}
+
+	public void removeTrainListener(TrainingListener trainingListener) {
+
+		trainingListeners.remove(trainingListener);
+	}
+
+	public String getProjectName() {
+
+		assertProjectSelected();
+		return project.getName();
+	}
+
+	public void setSort(String column, boolean up) {
+
+		assertProjectSelected();
+		project.setSort(column, up);
+	}
+
+	public void sort() {
+
+		assertProjectSelected();
+		project.sort();
+	}
+
+	private FutureTask<LinearModel> scheduleTraining(Data data) {
+		FutureTask<LinearModel> future = new FutureTask<LinearModel>(
+				new Callable<LinearModel>() {
+
+					@Override
+					public LinearModel call() throws Exception {
+
+						return core.train(data);
+					}
+				});
+
+		executor.execute(future);
+		return future;
+	}
+
+	private void notifyListners(FutureTask<LinearModel> future,
+			NodeGenerator nodeGenerator, StringWriter out) {
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				LinearModel model;
+				try {
+					model = future.get();
+				} catch (Exception e) {
+
+					throw new TrainingFailedException(e);
+				}
+
+				project.setModel(model);
+				project.setLabels(nodeGenerator.getLabels());
+				project.setWordFeatures(nodeGenerator.getWordFeatures());
+				project.setRestore(createRestore(out));
+
+				for (TrainingListener listener : trainingListeners) {
+					listener.finished(project);
+				}
+
+			}
+		}).start();
+
 	}
 
 	private void assertProjectSelected() {
@@ -295,19 +322,4 @@ public class Application {
 		return reader;
 	}
 
-	public void addTrainListener(TrainingListener trainingListener) {
-		
-		trainingListeners.add(trainingListener);
-	}
-
-	public void removeTrainListener(TrainingListener trainingListener) {
-		
-		trainingListeners.remove(trainingListener);
-	}
-
-	public String getProjectName() {
-
-		assertProjectSelected();
-		return project.getName();
-	}
 }

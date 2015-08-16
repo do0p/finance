@@ -15,7 +15,7 @@ import org.junit.Test;
 
 import at.brandl.finance.application.error.NoProjectSelectedException;
 import at.brandl.finance.application.error.UntrainedProjectException;
-import at.brandl.finance.reader.Line;
+import at.brandl.finance.common.Line;
 
 public class ApplicationTest {
 
@@ -135,9 +135,9 @@ public class ApplicationTest {
 	private Line createLine() {
 
 		Line line = new Line();
-		line.setDay(6);
-		line.setMonth(2);
-		line.setWeekDay(4);
+//		line.setDay(6);
+//		line.setMonth(2);
+//		line.setWeekDay(4);
 		line.setAmount(new BigDecimal(-20));
 		line.addWord("AUTOMAT");
 		line.addWord("05310014");
