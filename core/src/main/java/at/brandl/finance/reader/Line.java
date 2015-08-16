@@ -120,4 +120,9 @@ public class Line  implements Serializable{
 
 		return label + " " + words + " " + confidence + " " + confirmed;
 	}
+
+	public double getConfidence() {
+
+		return confidence;
+	}
 }

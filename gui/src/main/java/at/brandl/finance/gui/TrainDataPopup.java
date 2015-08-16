@@ -16,7 +16,6 @@ import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Shell;
 
 import at.brandl.finance.application.Application;
-import at.brandl.finance.application.Prediction;
 import at.brandl.finance.reader.Line;
 
 public class TrainDataPopup {
@@ -87,7 +86,9 @@ public class TrainDataPopup {
 					lines.remove(0);
 
 					lineDesc.setText(lines.get(0).toString());
-					combo.clearSelection();
+					if (lines.get(0).getLabel() != null) {
+						combo.setText(lines.get(0).getLabel());
+					}
 				} else {
 					nextButton.setEnabled(false);
 				}
@@ -107,12 +108,6 @@ public class TrainDataPopup {
 				}
 
 				application.train();
-
-				for (Line line : application.getUnconfirmedLines()) {
-					Prediction prediction = application.predict(line);
-					line.setLabel(prediction.getLabel());
-					line.setConfidence(prediction.getConfidence());
-				}
 
 				popUp.close();
 			}

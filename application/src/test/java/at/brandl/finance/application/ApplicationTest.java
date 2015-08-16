@@ -5,6 +5,9 @@ import static at.brandl.finance.application.TestProperties.getTestFile;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.Collection;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.FutureTask;
 
 import org.junit.Assert;
 import org.junit.Before;
@@ -63,30 +66,70 @@ public class ApplicationTest {
 	}
 
 	@Test
-	public void predict() throws IOException {
+	public void predict() throws IOException, InterruptedException,
+			ExecutionException {
+
+		assertCalledAfterTrain(new Callable<Boolean>() {
+
+			@Override
+			public Boolean call() throws Exception {
+
+				Line line = createLine();
+				Prediction predict = application.predict(line);
+				Assert.assertNotNull(predict.getLabel());
+				Assert.assertFalse(predict.getConfidence() <= 0);
+
+				return true;
+			}
+		});
+
+	}
+
+	@Test
+	public void serialize() throws IOException, InterruptedException,
+			ExecutionException {
+
+		assertCalledAfterTrain(new Callable<Boolean>() {
+
+			@Override
+			public Boolean call() throws Exception {
+
+				String saveFile = getTestFile("save.fdt");
+				application.saveToFile(saveFile);
+
+				application = new Application();
+				application.readFromFile(saveFile, false);
+
+				Line line = createLine();
+				Prediction predict = application.predict(line);
+				Assert.assertNotNull(predict.getLabel());
+				Assert.assertFalse(predict.getConfidence() <= 0);
+
+				return true;
+
+			}
+		});
+
+	}
+
+	private void assertCalledAfterTrain(Callable<Boolean> test)
+			throws IOException, InterruptedException, ExecutionException {
+		
+		FutureTask<Boolean> futureTask = new FutureTask<Boolean>(test);
+
+		application.addTrainListener(new Application.TrainingListener() {
+
+			@Override
+			public void finished(Project trainedProject) {
+
+				application.removeTrainListener(this);
+				futureTask.run();
+			}
+		});
 
 		train();
-		Line line = createLine();
-		Prediction predict = application.predict(line);
-		Assert.assertNotNull(predict.getLabel());
-		Assert.assertFalse(predict.getConfidence() <= 0);
-	}
-	
-	@Test
-	public void serialize() throws IOException {
-		
-		train();
-		String saveFile = getTestFile("save.fdt");
-		application.saveToFile(saveFile);
-		
-		application = new Application();
-		application.readFromFile(saveFile, false);
-		
-		Line line = createLine();
-		Prediction predict = application.predict(line);
-		Assert.assertNotNull(predict.getLabel());
-		Assert.assertFalse(predict.getConfidence() <= 0);
-		
+
+		Assert.assertTrue(futureTask.get());
 	}
 
 	private Line createLine() {

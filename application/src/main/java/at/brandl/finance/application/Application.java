@@ -2,6 +2,7 @@ package at.brandl.finance.application;
 
 import java.io.BufferedWriter;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,12 +14,21 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import at.brandl.finance.application.error.NoConfirmedLinesException;
 import at.brandl.finance.application.error.NoProjectSelectedException;
 import at.brandl.finance.application.error.NoSuchProjectFoundException;
+import at.brandl.finance.application.error.OpenProjectFailedException;
 import at.brandl.finance.application.error.ProjectWithUnsafedChangesException;
+import at.brandl.finance.application.error.SaveProjectFailedException;
+import at.brandl.finance.application.error.TrainingFailedException;
 import at.brandl.finance.application.error.UnknownProjectFileFormatException;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Data;
@@ -34,10 +44,17 @@ import at.brandl.finance.reader.NodeGenerator;
 
 public class Application {
 
+	public static interface TrainingListener {
+
+		void finished(Project trainedProject);
+	}
+
 	private static final double LOWER = -1;
 	private static final double UPPER = 1;
 	private final Map<String, Project> projects = new HashMap<>();
-	private final Scale scale = new Scale();
+	private final Collection<TrainingListener> trainingListeners = new CopyOnWriteArrayList<Application.TrainingListener>();
+	private final Executor executor = Executors.newSingleThreadExecutor();
+	
 	private final Core<LinearModel> core = new LinearCore();
 	private Project project;
 
@@ -75,7 +92,7 @@ public class Application {
 
 		RewindableReader reader = createReader(line, wordFeatures);
 		try {
-			Data data = scale.scale(reader, null, restore, LOWER, UPPER);
+			Data data = new Scale(reader, null, restore, LOWER, UPPER).scale();
 			double[] predict = core.predict(model, data.getNodeSets().get(0));
 			String label = labels[(int) predict[0]];
 			double confidence = predict[1];
@@ -91,26 +108,72 @@ public class Application {
 
 		assertProjectSelected();
 
-		List<Line> labeled = project.getConfirmedLines();
+		List<Line> lines = project.getConfirmedLines();
+
+		if (lines.isEmpty()) {
+			throw new NoConfirmedLinesException();
+		}
 
 		try (StringWriter out = new StringWriter()) {
-
-			BufferedWriter saveFile = new BufferedWriter(out);
+		
 			NodeGenerator nodeGenerator = new NodeGenerator();
-			RewindableStringReader reader = createReader(nodeGenerator
-					.createNodeStrings(labeled));
-
-			Data data = scale.scale(reader, saveFile, null, LOWER, UPPER);
-			LinearModel model = core.train(data);
-
-			project.setModel(model);
-			project.setLabels(nodeGenerator.getLabels());
-			project.setWordFeatures(nodeGenerator.getWordFeatures());
-			project.setRestore(createRestore(out));
-
+			List<String> nodeStrings = nodeGenerator.createNodeStrings(lines);
+			BufferedWriter saveFile = new BufferedWriter(out);
+			RewindableStringReader reader = createReader(nodeStrings);
+			Data data = new Scale(reader, saveFile, null, LOWER, UPPER).scale();
+		
+			FutureTask<LinearModel> future = scheduleTraining(data);
+		
+			notifyListners(future, nodeGenerator, out);
+		
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+	}
+
+	private FutureTask<LinearModel> scheduleTraining(Data data) {
+		FutureTask<LinearModel> future = new FutureTask<LinearModel>(
+				new Callable<LinearModel>() {
+
+					@Override
+					public LinearModel call() throws Exception {
+
+						return core.train(data);
+					}
+				});
+
+		executor.execute(future);
+		return future;
+	}
+
+
+	private void notifyListners(FutureTask<LinearModel> future,
+			NodeGenerator nodeGenerator, StringWriter out) {
+
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				LinearModel model;
+				try {
+					model = future.get();
+				} catch (Exception e) {
+
+					throw new TrainingFailedException(e);
+				} 
+
+				project.setModel(model);
+				project.setLabels(nodeGenerator.getLabels());
+				project.setWordFeatures(nodeGenerator.getWordFeatures());
+				project.setRestore(createRestore(out));
+
+				for (TrainingListener listener : trainingListeners) {
+					listener.finished(project);
+				}
+
+			}
+		}).start();
+
 	}
 
 	public int loadData(String fileName) throws IOException {
@@ -162,34 +225,41 @@ public class Application {
 		return project.getUnconfirmedLines();
 	}
 
-	public void saveToFile(String filename) throws IOException {
-		
+	public void saveToFile(String filename)  {
+
 		assertProjectSelected();
-		
-		try(OutputStream os = new GZIPOutputStream(new FileOutputStream(filename))) {
-			
+
+		try (OutputStream os = new GZIPOutputStream(new FileOutputStream(
+				filename))) {
+
 			project.markUnchanged();
 			new ObjectOutputStream(os).writeObject(project);
+		} catch (IOException e) {
+			throw new SaveProjectFailedException(e);
 		}
 	}
-	
-	public void readFromFile(String filename, boolean force) throws IOException {
-		
-		if(!force) {
-			if(project != null && project.hasChanges()) {
+
+	public void readFromFile(String filename, boolean force)  {
+
+		if (!force) {
+			if (project != null && project.hasChanges()) {
 				throw new ProjectWithUnsafedChangesException();
 			}
 		}
-		
-		try(InputStream is = new GZIPInputStream(new FileInputStream(filename))) {
-			
+
+		try (InputStream is = new GZIPInputStream(new FileInputStream(filename))) {
+
 			project = (Project) new ObjectInputStream(is).readObject();
+		} catch (FileNotFoundException e) {
+
+			throw new OpenProjectFailedException(e);
+			
 		} catch (Exception e) {
+
 			throw new UnknownProjectFileFormatException(e);
-		}
+		} 
 	}
-	
-	
+
 	private void assertProjectSelected() {
 
 		if (project == null) {
@@ -225,4 +295,19 @@ public class Application {
 		return reader;
 	}
 
+	public void addTrainListener(TrainingListener trainingListener) {
+		
+		trainingListeners.add(trainingListener);
+	}
+
+	public void removeTrainListener(TrainingListener trainingListener) {
+		
+		trainingListeners.remove(trainingListener);
+	}
+
+	public String getProjectName() {
+
+		assertProjectSelected();
+		return project.getName();
+	}
 }

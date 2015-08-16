@@ -2,13 +2,14 @@ package at.brandl.finance.application;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 import at.brandl.finance.reader.Line;
 
-public class Journal implements Serializable{
+public class Journal implements Serializable {
 
 	private static final long serialVersionUID = 1040315008843882813L;
 	private final List<Line> lines = new ArrayList<>();
@@ -59,7 +60,15 @@ public class Journal implements Serializable{
 	public List<Line> getUnconfirmedLines() {
 
 		return lines.stream().filter(t -> !t.isConfirmed())
-				.collect(Collectors.toList());
+				.sorted(new Comparator<Line>() {
+
+					@Override
+					public int compare(Line o1, Line o2) {
+
+						return Double.compare(o1.getConfidence(),
+								o2.getConfidence());
+					}
+				}).collect(Collectors.toList());
 	}
 
 	public void confirmAllLabeled() {
@@ -82,29 +91,29 @@ public class Journal implements Serializable{
 	}
 
 	public void markUnchanged() {
-		
+
 		changes = false;
 		markLinesUnchanged();
 	}
-	
+
 	private void markLinesUnchanged() {
-		
+
 		lines.stream().filter(t -> t.hasChanges())
-		.forEach(new Consumer<Line>() {
+				.forEach(new Consumer<Line>() {
 
-			@Override
-			public void accept(Line line) {
+					@Override
+					public void accept(Line line) {
 
-				line.markUnchanged();
-			}
-		});
+						line.markUnchanged();
+					}
+				});
 	}
 
 	private boolean changesInLines() {
-		
-		for(Line line : lines) {
-			
-			if(line.hasChanges()) {
+
+		for (Line line : lines) {
+
+			if (line.hasChanges()) {
 				return true;
 			}
 		}

@@ -22,9 +22,8 @@ public class Scale {
 	private BufferedWriter fpSave;
 	private Data data;
 
-	public Data scale(RewindableReader dataFile, BufferedWriter saveFile,
-			RewindableReader restoreFile, double pLower, double pUpper)
-			throws IOException {
+	public Scale(RewindableReader dataFile, BufferedWriter saveFile,
+			RewindableReader restoreFile, double pLower, double pUpper) {
 
 		if (pUpper <= pLower) {
 			throw new IllegalArgumentException(
@@ -32,7 +31,7 @@ public class Scale {
 		}
 		if (restoreFile != null && saveFile != null) {
 			throw new IllegalArgumentException(
-					"cannot use -r and -s simultaneously");
+					"cannot use save and restore simultaneously");
 		}
 
 		lower = pLower;
@@ -41,11 +40,14 @@ public class Scale {
 		fpRestore = restoreFile;
 		fpSave = saveFile;
 		data = new Data();
+	}
+
+	public Data scale() throws IOException {
 
 		findMaxIndex();
 		findMinMax();
 		writeToSave();
-		scale();
+		doScale();
 
 		return data;
 	}
@@ -178,7 +180,7 @@ public class Scale {
 		}
 	}
 
-	private void scale() throws IOException {
+	private void doScale() throws IOException {
 
 		while (fp.ready()) {
 

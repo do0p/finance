@@ -12,6 +12,8 @@ import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Menu;
+import org.eclipse.swt.widgets.MenuItem;
 import org.eclipse.swt.widgets.Shell;
 import org.eclipse.swt.widgets.Table;
 import org.eclipse.swt.widgets.TableItem;
@@ -19,39 +21,144 @@ import org.eclipse.swt.widgets.ToolBar;
 import org.eclipse.swt.widgets.ToolItem;
 
 import at.brandl.finance.application.Application;
+import at.brandl.finance.application.Application.TrainingListener;
 import at.brandl.finance.application.Prediction;
+import at.brandl.finance.application.Project;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.reader.Line;
 
-public class Gui {
+public class Gui implements TrainingListener {
 
 	static final int COUNT = 1000000;
+	private MenuItem fileNewItem, fileOpenItem, fileSaveItem, fileExitItem;
+	private MenuItem projectLoadItem, projectTrainItem;
+	private ToolItem  trainData, refreshData;
+	private Table table;
+	private Shell shell;
+	private Display display;
+	private Application application;
+
+	public static void main(String[] args) {
+
+		new Gui();
+	}
 
 	public Gui() {
 
-		Application application = new Application();
-		Display display = new Display();
-		final Shell shell = new Shell(display);
-		shell.setLayout(new RowLayout(SWT.VERTICAL));
-		ToolBar bar = new ToolBar(shell, SWT.BORDER);
+		display = new Display();
+		createShell();
+		createMenuBar();
+		createToolBar();
+		createTable();
 
-		ToolItem newProjectItem = new ToolItem(bar, SWT.PUSH);
-		newProjectItem.setText("New Project");
-		newProjectItem.addListener(SWT.Selection, new Listener() {
+		application = new Application();
+		application.addTrainListener(this);
 
-			@Override
-			public void handleEvent(Event arg0) {
+		table.addListener(SWT.Selection, createTableSelectionListener());
+		table.addListener(SWT.SetData, createTableSetDataListener());
 
-				new CreateProjectPopup(display, application);
+		Listener newProjectListener = createProjectListener();
+		fileNewItem.addListener(SWT.Selection, newProjectListener);
+
+		fileSaveItem.addListener(SWT.Selection,
+				createFileSaveSelectionListener());
+		fileOpenItem.addListener(SWT.Selection,
+				createFileOpenSelectionListener());
+		fileExitItem.addListener(SWT.Selection, createExitListener());
+
+		Listener loadDataListener = createLoadDataListener();
+		projectLoadItem.addListener(SWT.Selection, loadDataListener);
+
+		Listener trainDataListener = createTrainDataListener();
+		trainData.addListener(SWT.Selection, trainDataListener);
+		projectTrainItem.addListener(SWT.Selection, trainDataListener);
+
+		refreshData.addListener(SWT.Selection, createRefreshListener());
+
+		shell.pack();
+		shell.open();
+		while (!shell.isDisposed()) {
+			if (!display.readAndDispatch())
+				display.sleep();
+		}
+		display.dispose();
+	}
+
+	private Listener createExitListener() {
+
+		return new Listener() {
+			public void handleEvent(Event event) {
+
+				display.dispose();
+			}
+		};
+	}
+
+	private Listener createFileSaveSelectionListener() {
+
+		return new Listener() {
+			public void handleEvent(Event event) {
+
+				FileDialog dialog = new FileDialog(shell, SWT.SAVE);
+				dialog.setFilterNames(new String[] { "Finance Files" });
+				dialog.setFilterExtensions(new String[] { "*.fdt" });
+				dialog.setFilterPath("c:\\");
+				dialog.setFileName(application.getProjectName() + ".fdt");
+
+				application.saveToFile(dialog.open());
+
+			}
+		};
+	}
+
+	private Listener createFileOpenSelectionListener() {
+
+		return new Listener() {
+			public void handleEvent(Event event) {
+
+				FileDialog dialog = new FileDialog(shell, SWT.OPEN);
+				dialog.setFilterNames(new String[] { "Finance Files" });
+				dialog.setFilterExtensions(new String[] { "*.fdt" });
+				dialog.setFilterPath("c:\\");
+
+				application.readFromFile(dialog.open(), false);
+				
+				refresh();
+			}
+		};
+	}
+
+	@Override
+	public void finished(Project trainedProject) {
+
+		for (Line line : application.getUnconfirmedLines()) {
+			Prediction prediction = application.predict(line);
+			line.setLabel(prediction.getLabel());
+			line.setConfidence(prediction.getConfidence());
+		}
+		Display.getDefault().asyncExec(new Runnable() {
+			public void run() {
+				refresh();
 			}
 		});
 
-		Rectangle clientArea = shell.getClientArea();
-		bar.setLocation(clientArea.x, clientArea.y);
-		bar.pack();
+	}
 
-		final Table table = new Table(shell, SWT.VIRTUAL | SWT.BORDER | SWT.MULTI);
-		table.addListener(SWT.Selection, new Listener() {
+	private Listener createTableSetDataListener() {
+		return new Listener() {
+
+			public void handleEvent(Event event) {
+				TableItem item = (TableItem) event.item;
+				int index = table.indexOf(item);
+				Line line = application.getLine(index);
+				item.setText(line.toString());
+				item.setData(line);
+			}
+		};
+	}
+
+	private Listener createTableSelectionListener() {
+		return new Listener() {
 			public void handleEvent(Event e) {
 
 				TableItem[] selection = table.getSelection();
@@ -65,22 +172,39 @@ public class Gui {
 				}
 				new TrainDataPopup(display, application, lines);
 			}
-		});
-		table.addListener(SWT.SetData, new Listener() {
+		};
+	}
 
-			public void handleEvent(Event event) {
-				TableItem item = (TableItem) event.item;
-				int index = table.indexOf(item);
-				Line line = application.getLine(index);
-				item.setText(line.toString());
-				item.setData(line);
+	private Listener createRefreshListener() {
+		return new Listener() {
+
+			@Override
+			public void handleEvent(Event arg0) {
+
+				refresh();
 			}
-		});
-		table.setLayoutData(new RowData(500, 500));
+		};
+	}
 
-		ToolItem loadData = new ToolItem(bar, SWT.PUSH);
-		loadData.setText("Load Data");
-		loadData.addListener(SWT.Selection, new Listener() {
+	private void refresh() {
+
+		table.clearAll();
+		table.setItemCount(application.getNumLines());
+	}
+
+	private Listener createTrainDataListener() {
+		return new Listener() {
+
+			@Override
+			public void handleEvent(Event arg0) {
+
+				new TrainDataPopup(display, application);
+			}
+		};
+	}
+
+	private Listener createLoadDataListener() {
+		return new Listener() {
 
 			@Override
 			public void handleEvent(Event arg0) {
@@ -98,7 +222,7 @@ public class Gui {
 				shell.layout();
 
 				try {
-					for (Line line : application.getUnconfirmedLines()) {
+					for (Line line : application.getUnlabeledLines()) {
 						Prediction prediction = application.predict(line);
 						line.setLabel(prediction.getLabel());
 						line.setConfidence(prediction.getConfidence());
@@ -107,57 +231,95 @@ public class Gui {
 					e.printStackTrace();
 				}
 			}
-		});
-
-		ToolItem trainData = new ToolItem(bar, SWT.PUSH);
-		trainData.setText("Train Data");
-		trainData.addListener(SWT.Selection, new Listener() {
-
-			@Override
-			public void handleEvent(Event arg0) {
-
-				new TrainDataPopup(display, application);
-			}
-		});
-
-		ToolItem refreshData = new ToolItem(bar, SWT.PUSH);
-		refreshData.setText("Refresh");
-		refreshData.addListener(SWT.Selection, new Listener() {
-
-			@Override
-			public void handleEvent(Event arg0) {
-
-				table.clearAll();
-				table.setItemCount(application.getNumLines());
-			}
-		});
-
-		// Button button = new Button(shell, SWT.PUSH);
-		// button.setText("Add Items");
-		// final Label label = new Label(shell, SWT.NONE);
-		// button.addListener(SWT.Selection, new Listener() {
-		//
-		// public void handleEvent(Event event) {
-		// long t1 = System.currentTimeMillis();
-		// table.setItemCount(COUNT);
-		// long t2 = System.currentTimeMillis();
-		// label.setText("Items: " + COUNT + ", Time: " + (t2 - t1)
-		// + " (ms)");
-		// shell.layout();
-		// }
-		// });
-		shell.pack();
-		shell.open();
-		while (!shell.isDisposed()) {
-			if (!display.readAndDispatch())
-				display.sleep();
-		}
-		display.dispose();
+		};
 	}
 
-	public static void main(String[] args) {
+	private Listener createProjectListener() {
 
-		new Gui();
+		return new Listener() {
+
+			@Override
+			public void handleEvent(Event arg0) {
+
+				new CreateProjectPopup(display, application);
+			}
+		};
+	}
+
+	private void createShell() {
+
+		shell = new Shell(display);
+		shell.setLayout(new RowLayout(SWT.VERTICAL));
+	}
+
+	private void createTable() {
+
+		table = new Table(shell, SWT.VIRTUAL | SWT.BORDER | SWT.MULTI);
+		table.setLayoutData(new RowData(500, 500));
+	}
+
+	private void createToolBar() {
+
+		ToolBar toolBar = new ToolBar(shell, SWT.BORDER);
+
+		trainData = new ToolItem(toolBar, SWT.PUSH);
+		trainData.setText("Train Data");
+
+		refreshData = new ToolItem(toolBar, SWT.PUSH);
+		refreshData.setText("Refresh");
+
+		Rectangle clientArea = shell.getClientArea();
+		toolBar.setLocation(clientArea.x, clientArea.y);
+		toolBar.pack();
+	}
+
+	private void createMenuBar() {
+		Menu menuBar = new Menu(shell, SWT.BAR);
+
+		Menu fileMenu = createFileMenu();
+		Menu projectMenu = createProjectMenu();
+
+		MenuItem fileMenuHeader = new MenuItem(menuBar, SWT.CASCADE);
+		fileMenuHeader.setText("&File");
+		fileMenuHeader.setMenu(fileMenu);
+
+		MenuItem projectMenuHeader = new MenuItem(menuBar, SWT.CASCADE);
+		projectMenuHeader.setText("&Project");
+		projectMenuHeader.setMenu(projectMenu);
+
+		shell.setMenuBar(menuBar);
+	}
+
+	private Menu createFileMenu() {
+
+		Menu fileMenu = new Menu(shell, SWT.DROP_DOWN);
+
+		fileNewItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileNewItem.setText("&New");
+
+		fileOpenItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileOpenItem.setText("&Open");
+
+		fileSaveItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileSaveItem.setText("&Save");
+
+		fileExitItem = new MenuItem(fileMenu, SWT.PUSH);
+		fileExitItem.setText("E&xit");
+
+		return fileMenu;
+	}
+
+	private Menu createProjectMenu() {
+
+		Menu projectMenu = new Menu(shell, SWT.DROP_DOWN);
+
+		projectLoadItem = new MenuItem(projectMenu, SWT.PUSH);
+		projectLoadItem.setText("&Load");
+
+		projectTrainItem = new MenuItem(projectMenu, SWT.PUSH);
+		projectTrainItem.setText("&Train");
+
+		return projectMenu;
 	}
 
 }

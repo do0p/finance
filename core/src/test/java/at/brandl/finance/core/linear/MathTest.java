@@ -129,9 +129,9 @@ public class MathTest {
 
 	private Data createData() throws IOException {
 
-		return new Scale().scale(new RewindableFileReader(DATA_FILENAME),
+		return new Scale(new RewindableFileReader(DATA_FILENAME),
 				new BufferedWriter(new FileWriter(SAVE_FILENAME)), null, LOWER,
-				UPPER);
+				UPPER).scale();
 	}
 
 	private double[] calcExpected(Double label, List<Double> labels) {

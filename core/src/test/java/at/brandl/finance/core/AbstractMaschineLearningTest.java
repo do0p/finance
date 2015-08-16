@@ -18,14 +18,14 @@ public abstract class AbstractMaschineLearningTest<T extends Model> {
 	@Test
 	public void learn() throws IOException {
 
-		Data data = new Scale().scale(new RewindableFileReader(
+		Data data = new Scale(new RewindableFileReader(
 				getDataFileName()), new BufferedWriter(new FileWriter(
-				getSaveFileName())), null, getLower(), getUpper());
+				getSaveFileName())), null, getLower(), getUpper()).scale();
 		T model = getCore().train(data);
 
-		Data validation = new Scale().scale(new RewindableFileReader(
+		Data validation = new Scale(new RewindableFileReader(
 				getValidationFileName()), null, new RewindableFileReader(
-				getSaveFileName()), getLower(), 5d);
+				getSaveFileName()), getLower(), 5d).scale();
 		for (int i = 0; i < validation.getSize(); i++) {
 			NodeSet input = validation.getNodeSets().get(i);
 			double[] result = getCore().predict(model, input);
