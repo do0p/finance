@@ -24,7 +24,7 @@
 		<dependency>
 			<groupId>org.eclipse</groupId>
 			<artifactId>swt</artifactId>
-			<version>3</version>
+			<version>4.5</version>
 		</dependency>
 	</dependencies>
 	<build>

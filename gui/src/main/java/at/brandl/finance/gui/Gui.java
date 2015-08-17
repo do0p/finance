@@ -32,6 +32,7 @@ import at.brandl.finance.application.Application.TrainingListener;
 import at.brandl.finance.application.Journal;
 import at.brandl.finance.application.Journal.Filter;
 import at.brandl.finance.application.Prediction;
+import at.brandl.finance.application.error.NoSuchLineException;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Line;
 import at.brandl.finance.reader.FinanceDataReader;
@@ -61,6 +62,7 @@ public class Gui implements TrainingListener {
 	private Filter labelFilter;
 	private Filter confirmedFilter;
 	private Filter expensesFilter;
+	private ToolItem confirmAll;
 
 	public static void main(String[] args) {
 
@@ -102,6 +104,9 @@ public class Gui implements TrainingListener {
 		trainData.addListener(SWT.Selection, trainDataListener);
 		projectTrainItem.addListener(SWT.Selection, trainDataListener);
 
+		
+		confirmAll.addListener(SWT.Selection, createConfirmAllListener());
+		
 		refreshData.addListener(SWT.Selection, createRefreshListener());
 
 		shell.pack();
@@ -113,6 +118,24 @@ public class Gui implements TrainingListener {
 		}
 
 		exit();
+	}
+
+	private Listener createConfirmAllListener() {
+
+		return new Listener() {
+			
+			@Override
+			public void handleEvent(Event arg0) {
+
+				for(int i = 0; i < application.getSize(); i++) {
+					
+					Line line = application.getLine(i);
+					line.setConfirmed(true);
+					line.setConfidence(1d);
+				}
+				refresh();
+			}
+		};
 	}
 
 	private void createFilters() {
@@ -286,20 +309,25 @@ public class Gui implements TrainingListener {
 		return new Listener() {
 
 			public void handleEvent(Event event) {
-				TableItem item = (TableItem) event.item;
-				int index = table.indexOf(item);
-				Line line = application.getLine(index);
-				boolean labeled = line.getLabel() != null;
-				item.setText(1, labeled ? line.getLabel() : "");
-				item.setText(2,
-						String.format("%.1f%%", line.getConfidence() * 100));
-				item.setText(3, Boolean.toString(line.isConfirmed()));
-				item.setText(4, dateFormat.format(line.getDate()));
-				item.setText(5,
-						String.format("%,.2f", line.getAmount().doubleValue()));
-				item.setText(6, line.getText(FinanceDataReader.TEXT));
-				item.setText(7, line.getText(FinanceDataReader.REASON));
-				item.setData(line);
+
+				try {
+					TableItem item = (TableItem) event.item;
+					int index = table.indexOf(item);
+					Line line = application.getLine(index);
+					boolean labeled = line.getLabel() != null;
+					item.setText(1, labeled ? line.getLabel() : "");
+					item.setText(2,
+							String.format("%.1f%%", line.getConfidence() * 100));
+					item.setText(3, Boolean.toString(line.isConfirmed()));
+					item.setText(4, dateFormat.format(line.getDate()));
+					item.setText(5, String.format("%,.2f", line.getAmount()
+							.doubleValue()));
+					item.setText(6, line.getText(FinanceDataReader.TEXT));
+					item.setText(7, line.getText(FinanceDataReader.REASON));
+					item.setData(line);
+				} catch (NoSuchLineException e) {
+					System.err.println(e.getMessage());
+				}
 			}
 		};
 	}
@@ -474,6 +502,9 @@ public class Gui implements TrainingListener {
 		trainData = new ToolItem(toolBar, SWT.PUSH);
 		trainData.setText("Train Data");
 
+		confirmAll = new ToolItem(toolBar, SWT.PUSH);
+		confirmAll.setText("Confirm All");
+		
 		refreshData = new ToolItem(toolBar, SWT.PUSH);
 		refreshData.setText("Refresh");
 

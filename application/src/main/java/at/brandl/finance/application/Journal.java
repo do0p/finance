@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import at.brandl.finance.application.error.NoSuchLineException;
 import at.brandl.finance.common.Line;
 
 public class Journal implements Serializable {
@@ -70,7 +71,7 @@ public class Journal implements Serializable {
 		List<Line> filteredLines = getFilteredLines();
 
 		if (index >= filteredLines.size()) {
-			throw new IllegalArgumentException("no line with index " + index);
+			throw new NoSuchLineException("no line with index " + index);
 		}
 		return filteredLines.get(index);
 	}
