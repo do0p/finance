@@ -50,7 +50,7 @@ public class ApplicationTest {
 	public void predictWithoutTraining() {
 
 		application.createProject(PROJECT_NAME);
-		application.selectProject(PROJECT_NAME);
+		application.selectProject(PROJECT_NAME, false);
 		Line line = createLine();
 		application.predict(line);
 	}
@@ -59,7 +59,7 @@ public class ApplicationTest {
 	public void train() throws IOException {
 
 		application.createProject(PROJECT_NAME);
-		application.selectProject(PROJECT_NAME);
+		application.selectProject(PROJECT_NAME, false);
 		application.loadData(getTestFile("test.csv"));
 		application.confirmAllLabeled();
 		application.train();
@@ -120,7 +120,7 @@ public class ApplicationTest {
 		application.addTrainListener(new Application.TrainingListener() {
 
 			@Override
-			public void finished(Project trainedProject) {
+			public void onTrainingFinished() {
 
 				application.removeTrainListener(this);
 				futureTask.run();
@@ -135,9 +135,6 @@ public class ApplicationTest {
 	private Line createLine() {
 
 		Line line = new Line();
-//		line.setDay(6);
-//		line.setMonth(2);
-//		line.setWeekDay(4);
 		line.setAmount(new BigDecimal(-20));
 		line.addWord("AUTOMAT");
 		line.addWord("05310014");

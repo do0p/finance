@@ -75,7 +75,7 @@ public class TrainDataPopup {
 		line = lines.get(0);
 		updateGui();
 
-		combo.addListener(SWT.Traverse, createLabelSelectionListener());
+		combo.addListener(SWT.FocusOut, createLabelSelectionListener());
 		trainButton.addListener(SWT.Selection,
 				createTrainButtonListener(application, popUp));
 

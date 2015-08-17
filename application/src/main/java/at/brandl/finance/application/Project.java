@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Iterator;
 import java.util.List;
 
+import at.brandl.finance.application.Journal.Filter;
 import at.brandl.finance.common.Line;
 import at.brandl.finance.common.RewindableReader;
 import at.brandl.finance.core.linear.LinearModel;
@@ -111,11 +112,6 @@ public class Project implements Serializable {
 		return journal.getLine(index);
 	}
 
-	public int getNumLines() {
-
-		return journal.getNumLines();
-	}
-
 	public List<Line> getConfirmedLines() {
 
 		return journal.getConfirmedLines();
@@ -144,7 +140,7 @@ public class Project implements Serializable {
 	
 	public int getSize() {
 
-		return journal.getNumLines();
+		return journal.size();
 	}
 
 	public void setSort(String column, boolean up) {
@@ -155,5 +151,25 @@ public class Project implements Serializable {
 	public void sort() {
 		
 		journal.sort();
+	}
+	
+	public void addFilter(Filter filter) {
+		
+		journal.addFilter(filter);
+	}
+	
+	public void removeFilter(Filter filter) {
+		
+		journal.removeFilter(filter);
+	}
+
+	public void cleanUp() {
+		// TODO Auto-generated method stub
+		
+	}
+
+	public void release() {
+		// TODO Auto-generated method stub
+		
 	}
 }

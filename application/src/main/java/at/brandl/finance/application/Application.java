@@ -10,6 +10,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +23,7 @@ import java.util.concurrent.FutureTask;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import at.brandl.finance.application.Journal.Filter;
 import at.brandl.finance.application.error.NoConfirmedLinesException;
 import at.brandl.finance.application.error.NoProjectSelectedException;
 import at.brandl.finance.application.error.NoSuchProjectFoundException;
@@ -44,17 +46,24 @@ import at.brandl.finance.reader.NodeGenerator;
 
 public class Application {
 
+	public static interface ProjectSelectionListener {
+		
+		void onProjectSelection();
+		
+	}
+	
 	public static interface TrainingListener {
 
-		void finished(Project trainedProject);
+		void onTrainingFinished();
 	}
 
 	private static final double LOWER = -1;
 	private static final double UPPER = 1;
 	private final Map<String, Project> projects = new HashMap<>();
-	private final Collection<TrainingListener> trainingListeners = new CopyOnWriteArrayList<Application.TrainingListener>();
+	private final Collection<TrainingListener> trainingListeners = new CopyOnWriteArrayList<>();
+	private final Collection<ProjectSelectionListener> selectionListeners = new CopyOnWriteArrayList<>();
+	private final List<Filter> filters = new ArrayList<>();
 	private final Executor executor = Executors.newSingleThreadExecutor();
-
 	private final Core<LinearModel> core = new LinearCore();
 	private Project project;
 
@@ -68,11 +77,31 @@ public class Application {
 		return projects.keySet();
 	}
 
-	public void selectProject(String projectName) {
+	public void selectProject(String projectName, boolean force) {
+
+		if (project != null) {
+			if (!force && project.hasChanges()) {
+				throw new ProjectWithUnsafedChangesException();
+			}
+			project.release();
+			for(Filter filter : filters) {
+				project.removeFilter(filter);
+			}
+		}
 
 		project = projects.get(projectName);
+
 		if (project == null) {
 			throw new NoSuchProjectFoundException(projectName);
+		}
+		
+		for(Filter filter : filters) {
+			project.addFilter(filter);
+		}
+		
+		for(ProjectSelectionListener listener : selectionListeners) {
+			
+			listener.onProjectSelection();
 		}
 	}
 
@@ -162,14 +191,15 @@ public class Application {
 		return project.getLine(index);
 	}
 
-	public int getNumLines() {
+	public int getSize() {
 
 		assertProjectSelected();
-		return project.getNumLines();
+		return project.getSize();
 	}
 
 	public String[] getLabels() {
 
+		assertProjectSelected();
 		return project.getLabels();
 	}
 
@@ -196,15 +226,11 @@ public class Application {
 
 	public void readFromFile(String filename, boolean force) {
 
-		if (!force) {
-			if (project != null && project.hasChanges()) {
-				throw new ProjectWithUnsafedChangesException();
-			}
-		}
-
+		Project project;
 		try (InputStream is = new GZIPInputStream(new FileInputStream(filename))) {
 
 			project = (Project) new ObjectInputStream(is).readObject();
+	
 		} catch (FileNotFoundException e) {
 
 			throw new OpenProjectFailedException(e);
@@ -213,6 +239,8 @@ public class Application {
 
 			throw new UnknownProjectFileFormatException(e);
 		}
+		projects.put(project.getName(), project);
+		selectProject(project.getName(), false);
 	}
 
 	public void addTrainListener(TrainingListener trainingListener) {
@@ -223,6 +251,16 @@ public class Application {
 	public void removeTrainListener(TrainingListener trainingListener) {
 
 		trainingListeners.remove(trainingListener);
+	}
+	
+	public void addSelectionListener(ProjectSelectionListener selectionListener) {
+
+		selectionListeners.add(selectionListener);
+	}
+
+	public void removeSelectionListener(ProjectSelectionListener selectionListener) {
+
+		selectionListeners.remove(selectionListener);
 	}
 
 	public String getProjectName() {
@@ -241,6 +279,22 @@ public class Application {
 
 		assertProjectSelected();
 		project.sort();
+	}
+
+	public void addFilter(Filter filter) {
+
+		filters.add(filter);
+		if (project != null) {
+			project.addFilter(filter);
+		}
+	}
+
+	public void removeFilter(Filter filter) {
+
+		filters.remove(filter);
+		if (project != null) {
+			project.removeFilter(filter);
+		}
 	}
 
 	private FutureTask<LinearModel> scheduleTraining(Data data) {
@@ -279,7 +333,7 @@ public class Application {
 				project.setRestore(createRestore(out));
 
 				for (TrainingListener listener : trainingListeners) {
-					listener.finished(project);
+					listener.onTrainingFinished();
 				}
 
 			}

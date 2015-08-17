@@ -27,7 +27,7 @@ public class CreateProjectPopup {
 			@Override
 			public void handleEvent(Event arg0) {
 				application.createProject(text.getText());
-				application.selectProject(text.getText());
+				application.selectProject(text.getText(), false);
 				popUp.close();
 			}
 		});

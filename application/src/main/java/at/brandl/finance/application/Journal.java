@@ -1,10 +1,10 @@
 package at.brandl.finance.application;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
@@ -12,6 +12,11 @@ import java.util.stream.Collectors;
 import at.brandl.finance.common.Line;
 
 public class Journal implements Serializable {
+
+	public static interface Filter {
+
+		boolean accept(Line line);
+	}
 
 	public static final String CONFIDENCE = "Confidence";
 	public static final String AMOUNT = "Amount";
@@ -22,46 +27,24 @@ public class Journal implements Serializable {
 	public static final String REASON = "Reason";
 
 	private static final long serialVersionUID = 1040315008843882813L;
-	
-	private final List<Line> lines = new ArrayList<Line>();
-	private String column = DATE;
-	private boolean up = true;
-	private boolean changes;
+
+	private final List<Line> lines;
+
+	private transient List<Filter> filters;
+	private transient String column;
+	private transient boolean up;
+	private transient boolean changes;
+
+	public Journal() {
+		lines = new ArrayList<Line>();
+		filters = new ArrayList<>();
+		column = DATE;
+		up = true;
+	}
 
 	public int size() {
 
-		return lines.size();
-	}
-
-	private Comparator<Line> createComparator() {
-
-		return new Comparator<Line>() {
-
-			@Override
-			public int compare(Line line1, Line line2) {
-
-				int result;
-				switch (column) {
-				
-				case DATE:
-					result = line1.getDate().compareTo(line2.getDate());
-					break;
-					
-				case CONFIDENCE:
-					result = Double.compare(line1.getConfidence(),
-							line2.getConfidence());
-					break;
-					
-				case AMOUNT:
-					result = line1.getAmount().compareTo(line2.getAmount());
-					break;
-					
-				default:
-					result = 0;
-				}
-				return result * (up ? 1 : -1);
-			}
-		};
+		return getFilteredLines().size();
 	}
 
 	public void add(Line line) {
@@ -84,21 +67,29 @@ public class Journal implements Serializable {
 
 	public Line getLine(int index) {
 
-		Iterator<Line> iterator = lines.iterator();
-		for (int i = 0; i < lines.size(); i++) {
+		List<Line> filteredLines = getFilteredLines();
 
-			Line line = iterator.next();
-			if (i == index) {
-				return line;
+		if (index >= filteredLines.size()) {
+			throw new IllegalArgumentException("no line with index " + index);
+		}
+		return filteredLines.get(index);
+	}
+
+	private List<Line> getFilteredLines() {
+
+		return lines.stream().filter(t -> filter(t))
+				.collect(Collectors.toList());
+	}
+
+	private boolean filter(Line line) {
+
+		for (Filter filter : filters) {
+			if (!filter.accept(line)) {
+				return false;
 			}
 		}
 
-		throw new IllegalArgumentException("no line with index " + index);
-	}
-
-	public int getNumLines() {
-
-		return lines.size();
+		return true;
 	}
 
 	public List<Line> getConfirmedLines() {
@@ -146,6 +137,28 @@ public class Journal implements Serializable {
 		markLinesUnchanged();
 	}
 
+	public void setSort(String column, boolean up) {
+
+		this.column = column;
+		this.up = up;
+		sort();
+	}
+
+	public void sort() {
+
+		Collections.sort(lines, createComparator());
+	}
+
+	public void addFilter(Filter filter) {
+
+		filters.add(filter);
+	}
+
+	public void removeFilter(Filter filter) {
+
+		filters.remove(filter);
+	}
+
 	private void markLinesUnchanged() {
 
 		lines.stream().filter(t -> t.hasChanges())
@@ -170,16 +183,44 @@ public class Journal implements Serializable {
 		return false;
 	}
 
-	public void setSort(String column, boolean up) {
+	private Comparator<Line> createComparator() {
 
-		this.column = column;
-		this.up = up;
-		sort();
+		return new Comparator<Line>() {
+
+			@Override
+			public int compare(Line line1, Line line2) {
+
+				int result;
+				switch (column) {
+
+				case DATE:
+					result = line1.getDate().compareTo(line2.getDate());
+					break;
+
+				case CONFIDENCE:
+					result = Double.compare(line1.getConfidence(),
+							line2.getConfidence());
+					break;
+
+				case AMOUNT:
+					result = line1.getAmount().compareTo(line2.getAmount());
+					break;
+
+				default:
+					result = 0;
+				}
+				return result * (up ? 1 : -1);
+			}
+		};
 	}
 
-	public void sort() {
-		
-		Collections.sort(lines, createComparator());
+	private void readObject(java.io.ObjectInputStream in) throws IOException,
+			ClassNotFoundException {
+
+		in.defaultReadObject();
+		filters = new ArrayList<>();
+		column = DATE;
+		up = true;
 	}
 
 }
