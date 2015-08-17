@@ -34,7 +34,7 @@ public class ProjectTest {
 			reader.parse(is);
 			project.readData(reader);
 		}
-		Assert.assertEquals(159,  project.getSize());
+		Assert.assertEquals(159,  project.getSize(null));
 	}
 	
 	@Test
@@ -48,7 +48,7 @@ public class ProjectTest {
 		project.markUnchanged();
 		Assert.assertFalse(project.hasChanges());
 		
-		Line line = project.getLine(0);
+		Line line = project.getLines(null).get(0);
 		Assert.assertFalse(project.hasChanges());
 		
 		line.setLabel("bla");

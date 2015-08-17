@@ -5,6 +5,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
@@ -32,7 +33,6 @@ import at.brandl.finance.application.Application.TrainingListener;
 import at.brandl.finance.application.Journal;
 import at.brandl.finance.application.Journal.Filter;
 import at.brandl.finance.application.Prediction;
-import at.brandl.finance.application.error.NoSuchLineException;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Line;
 import at.brandl.finance.reader.FinanceDataReader;
@@ -59,10 +59,8 @@ public class Gui implements TrainingListener {
 	private Button unconfirmedCheck;
 	private Button expensesCheck;
 	private Button incomeCheck;
-	private Filter labelFilter;
-	private Filter confirmedFilter;
-	private Filter expensesFilter;
 	private ToolItem confirmAll;
+	private Collection<Filter> filters = new ArrayList<Filter>();
 
 	public static void main(String[] args) {
 
@@ -81,12 +79,7 @@ public class Gui implements TrainingListener {
 		application = new Application();
 		application.addTrainListener(this);
 
-		application.addFilter(labelFilter);
-		application.addFilter(confirmedFilter);
-		application.addFilter(expensesFilter);
-
 		table.addListener(SWT.Selection, createTableSelectionListener());
-		table.addListener(SWT.SetData, createTableSetDataListener());
 
 		Listener newProjectListener = createProjectListener();
 		fileNewItem.addListener(SWT.Selection, newProjectListener);
@@ -104,9 +97,8 @@ public class Gui implements TrainingListener {
 		trainData.addListener(SWT.Selection, trainDataListener);
 		projectTrainItem.addListener(SWT.Selection, trainDataListener);
 
-		
 		confirmAll.addListener(SWT.Selection, createConfirmAllListener());
-		
+
 		refreshData.addListener(SWT.Selection, createRefreshListener());
 
 		shell.pack();
@@ -123,13 +115,12 @@ public class Gui implements TrainingListener {
 	private Listener createConfirmAllListener() {
 
 		return new Listener() {
-			
+
 			@Override
 			public void handleEvent(Event arg0) {
 
-				for(int i = 0; i < application.getSize(); i++) {
-					
-					Line line = application.getLine(i);
+				for (Line line : application.getLines(filters)) {
+
 					line.setConfirmed(true);
 					line.setConfidence(1d);
 				}
@@ -140,7 +131,7 @@ public class Gui implements TrainingListener {
 
 	private void createFilters() {
 
-		labelFilter = new Filter() {
+		Filter labelFilter = new Filter() {
 
 			@Override
 			public boolean accept(Line line) {
@@ -154,7 +145,7 @@ public class Gui implements TrainingListener {
 
 		};
 
-		confirmedFilter = new Filter() {
+		Filter confirmedFilter = new Filter() {
 
 			@Override
 			public boolean accept(Line line) {
@@ -175,7 +166,7 @@ public class Gui implements TrainingListener {
 			}
 		};
 
-		expensesFilter = new Filter() {
+		Filter expensesFilter = new Filter() {
 
 			@Override
 			public boolean accept(Line line) {
@@ -195,6 +186,10 @@ public class Gui implements TrainingListener {
 
 			}
 		};
+
+		filters.add(labelFilter);
+		filters.add(confirmedFilter);
+		filters.add(expensesFilter);
 
 		// Composite filters = new Composite(shell, SWT.NONE);
 		// filters.setLayoutData(new RowData(800, 80));
@@ -305,31 +300,17 @@ public class Gui implements TrainingListener {
 
 	}
 
-	private Listener createTableSetDataListener() {
-		return new Listener() {
-
-			public void handleEvent(Event event) {
-
-				try {
-					TableItem item = (TableItem) event.item;
-					int index = table.indexOf(item);
-					Line line = application.getLine(index);
-					boolean labeled = line.getLabel() != null;
-					item.setText(1, labeled ? line.getLabel() : "");
-					item.setText(2,
-							String.format("%.1f%%", line.getConfidence() * 100));
-					item.setText(3, Boolean.toString(line.isConfirmed()));
-					item.setText(4, dateFormat.format(line.getDate()));
-					item.setText(5, String.format("%,.2f", line.getAmount()
-							.doubleValue()));
-					item.setText(6, line.getText(FinanceDataReader.TEXT));
-					item.setText(7, line.getText(FinanceDataReader.REASON));
-					item.setData(line);
-				} catch (NoSuchLineException e) {
-					System.err.println(e.getMessage());
-				}
-			}
-		};
+	private void createItem(Line line) {
+		TableItem item = new TableItem(table, SWT.NONE);
+		boolean labeled = line.getLabel() != null;
+		item.setText(1, labeled ? line.getLabel() : "");
+		item.setText(2, String.format("%.1f%%", line.getConfidence() * 100));
+		item.setText(3, Boolean.toString(line.isConfirmed()));
+		item.setText(4, dateFormat.format(line.getDate()));
+		item.setText(5, String.format("%,.2f", line.getAmount().doubleValue()));
+		item.setText(6, line.getText(FinanceDataReader.TEXT));
+		item.setText(7, line.getText(FinanceDataReader.REASON));
+		item.setData(line);
 	}
 
 	private Listener createTableSelectionListener() {
@@ -350,8 +331,7 @@ public class Gui implements TrainingListener {
 
 	private void createTable() {
 
-		table = new Table(shell, SWT.VIRTUAL | SWT.MULTI | SWT.BORDER
-				| SWT.FULL_SELECTION);
+		table = new Table(shell, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
 		table.setLayoutData(new RowData(800, 600));
@@ -394,7 +374,7 @@ public class Gui implements TrainingListener {
 
 				// update data displayed in table
 				table.setSortDirection(dir);
-				table.clearAll();
+				refresh();
 			}
 		};
 	}
@@ -425,8 +405,11 @@ public class Gui implements TrainingListener {
 		combo.setText(labelFilterText);
 		combo.pack();
 
-		table.setItemCount(application.getSize());
-		table.clearAll();
+		table.removeAll();
+		for (Line line : application.getLines(filters)) {
+			createItem(line);
+		}
+
 		for (int i = 0; i < 7; i++) {
 			table.getColumn(i).pack();
 		}
@@ -504,7 +487,7 @@ public class Gui implements TrainingListener {
 
 		confirmAll = new ToolItem(toolBar, SWT.PUSH);
 		confirmAll.setText("Confirm All");
-		
+
 		refreshData = new ToolItem(toolBar, SWT.PUSH);
 		refreshData.setText("Refresh");
 

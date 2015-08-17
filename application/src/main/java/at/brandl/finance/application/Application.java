@@ -10,7 +10,6 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +61,6 @@ public class Application {
 	private final Map<String, Project> projects = new HashMap<>();
 	private final Collection<TrainingListener> trainingListeners = new CopyOnWriteArrayList<>();
 	private final Collection<ProjectSelectionListener> selectionListeners = new CopyOnWriteArrayList<>();
-	private final List<Filter> filters = new ArrayList<>();
 	private final Executor executor = Executors.newSingleThreadExecutor();
 	private final Core<LinearModel> core = new LinearCore();
 	private Project project;
@@ -84,9 +82,7 @@ public class Application {
 				throw new ProjectWithUnsafedChangesException();
 			}
 			project.release();
-			for(Filter filter : filters) {
-				project.removeFilter(filter);
-			}
+
 		}
 
 		project = projects.get(projectName);
@@ -94,10 +90,7 @@ public class Application {
 		if (project == null) {
 			throw new NoSuchProjectFoundException(projectName);
 		}
-		
-		for(Filter filter : filters) {
-			project.addFilter(filter);
-		}
+
 		
 		for(ProjectSelectionListener listener : selectionListeners) {
 			
@@ -185,16 +178,10 @@ public class Application {
 		return project.getUnlabeledLines();
 	}
 
-	public Line getLine(int index) {
+	public int getSize(Collection<Filter> filters) {
 
 		assertProjectSelected();
-		return project.getLine(index);
-	}
-
-	public int getSize() {
-
-		assertProjectSelected();
-		return project.getSize();
+		return project.getSize(filters);
 	}
 
 	public String[] getLabels() {
@@ -281,21 +268,6 @@ public class Application {
 		project.sort();
 	}
 
-	public void addFilter(Filter filter) {
-
-		filters.add(filter);
-		if (project != null) {
-			project.addFilter(filter);
-		}
-	}
-
-	public void removeFilter(Filter filter) {
-
-		filters.remove(filter);
-		if (project != null) {
-			project.removeFilter(filter);
-		}
-	}
 
 	private FutureTask<LinearModel> scheduleTraining(Data data) {
 		FutureTask<LinearModel> future = new FutureTask<LinearModel>(
@@ -374,6 +346,11 @@ public class Application {
 				wordFeatures);
 		reader.addLine(nodeStr);
 		return reader;
+	}
+
+	public List<Line> getLines(Collection<Filter> filters) {
+
+		return project.getLines(filters);
 	}
 
 }

@@ -3,13 +3,13 @@ package at.brandl.finance.application;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import at.brandl.finance.application.error.NoSuchLineException;
 import at.brandl.finance.common.Line;
 
 public class Journal implements Serializable {
@@ -31,21 +31,19 @@ public class Journal implements Serializable {
 
 	private final List<Line> lines;
 
-	private transient List<Filter> filters;
 	private transient String column;
 	private transient boolean up;
 	private transient boolean changes;
 
 	public Journal() {
 		lines = new ArrayList<Line>();
-		filters = new ArrayList<>();
 		column = DATE;
 		up = true;
 	}
 
-	public int size() {
+	public int size(Collection<Filter> filters) {
 
-		return getFilteredLines().size();
+		return getFilteredLines(filters).size();
 	}
 
 	public void add(Line line) {
@@ -66,23 +64,17 @@ public class Journal implements Serializable {
 				.collect(Collectors.toList());
 	}
 
-	public Line getLine(int index) {
+	public List<Line> getFilteredLines(Collection<Filter> filters) {
 
-		List<Line> filteredLines = getFilteredLines();
-
-		if (index >= filteredLines.size()) {
-			throw new NoSuchLineException("no line with index " + index);
+		if(filters == null) {
+			return lines;
 		}
-		return filteredLines.get(index);
-	}
-
-	private List<Line> getFilteredLines() {
-
-		return lines.stream().filter(t -> filter(t))
+		
+		return lines.stream().filter(t -> filter(t, filters))
 				.collect(Collectors.toList());
 	}
 
-	private boolean filter(Line line) {
+	private boolean filter(Line line, Collection<Filter> filters) {
 
 		for (Filter filter : filters) {
 			if (!filter.accept(line)) {
@@ -150,15 +142,6 @@ public class Journal implements Serializable {
 		Collections.sort(lines, createComparator());
 	}
 
-	public void addFilter(Filter filter) {
-
-		filters.add(filter);
-	}
-
-	public void removeFilter(Filter filter) {
-
-		filters.remove(filter);
-	}
 
 	private void markLinesUnchanged() {
 
@@ -219,7 +202,6 @@ public class Journal implements Serializable {
 			ClassNotFoundException {
 
 		in.defaultReadObject();
-		filters = new ArrayList<>();
 		column = DATE;
 		up = true;
 	}

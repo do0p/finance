@@ -1,6 +1,7 @@
 package at.brandl.finance.application;
 
 import java.io.Serializable;
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 
@@ -107,9 +108,9 @@ public class Project implements Serializable {
 		return journal.getUnlabeled();
 	}
 
-	public Line getLine(int index) {
+	public List<Line> getLines(Collection<Filter> filters) {
 
-		return journal.getLine(index);
+		return journal.getFilteredLines(filters);
 	}
 
 	public List<Line> getConfirmedLines() {
@@ -138,9 +139,9 @@ public class Project implements Serializable {
 		journal.markUnchanged();
 	}
 	
-	public int getSize() {
+	public int getSize(Collection<Filter> filters) {
 
-		return journal.size();
+		return journal.size(filters);
 	}
 
 	public void setSort(String column, boolean up) {
@@ -152,16 +153,7 @@ public class Project implements Serializable {
 		
 		journal.sort();
 	}
-	
-	public void addFilter(Filter filter) {
-		
-		journal.addFilter(filter);
-	}
-	
-	public void removeFilter(Filter filter) {
-		
-		journal.removeFilter(filter);
-	}
+
 
 	public void cleanUp() {
 		// TODO Auto-generated method stub
