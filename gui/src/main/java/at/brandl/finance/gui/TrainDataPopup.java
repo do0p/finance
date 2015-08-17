@@ -34,6 +34,7 @@ public class TrainDataPopup {
 	private Button nextButton;
 
 	public TrainDataPopup(Display display, Application application) {
+		
 		this(display, application, application.getUnconfirmedLines());
 	}
 
@@ -165,8 +166,10 @@ public class TrainDataPopup {
 	}
 
 	private void updateLine() {
+		
 		line.setLabel(combo.getText());
 		line.setConfirmed(true);
+		line.setTrained(true);
 		line.setConfidence(1);
 	}
 

@@ -154,14 +154,11 @@ public class Project implements Serializable {
 		journal.sort();
 	}
 
-
-	public void cleanUp() {
-		// TODO Auto-generated method stub
+	public void release() {
 		
 	}
 
-	public void release() {
-		// TODO Auto-generated method stub
-		
+	public List<Line> getTrainedLines() {
+		return journal.getTrainedLines();
 	}
 }

@@ -61,7 +61,9 @@ public class ApplicationTest {
 		application.createProject(PROJECT_NAME);
 		application.selectProject(PROJECT_NAME, false);
 		application.loadData(getTestFile("test.csv"));
-		application.confirmAllLabeled();
+		for(Line line : application.getLines(null)) {
+			line.setTrained(true);
+		}
 		application.train();
 	}
 

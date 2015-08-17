@@ -17,46 +17,12 @@ public class Line implements Serializable {
 	private final Map<String, String> texts = new HashMap<>();
 	private final List<String> words = new ArrayList<>();
 	private Date date;
-	// private int day;
-	// private int month;
-	// private int weekDay;
 	private BigDecimal amount;
 	private String label;
 	private boolean confirmed;
+	private boolean trained;
 	private double confidence;
 	private boolean changes;
-
-//	public int getDay() {
-//
-//		return day;
-//	}
-//
-//	public void setDay(int day) {
-//
-//		changes = this.day != day;
-//		this.day = day;
-//	}
-//
-//	public int getMonth() {
-//
-//		return month;
-//	}
-//
-//	public void setMonth(int month) {
-//
-//		changes = this.month != month;
-//		this.month = month;
-//	}
-//
-//	public int getWeekDay() {
-//		return weekDay;
-//	}
-//
-//	public void setWeekDay(int weekDay) {
-//
-//		changes = this.weekDay != weekDay;
-//		this.weekDay = weekDay;
-//	}
 
 	public List<String> getWords() {
 
@@ -149,27 +115,40 @@ public class Line implements Serializable {
 	}
 
 	public Date getDate() {
+		
 		return date;
 	}
 
 	public void setDate(Date date) {
+		
 		this.date = date;
 	}
-	
+
 	public boolean isExpense() {
-		
+
 		return amount.compareTo(BigDecimal.ZERO) < 0;
 	}
-	
+
 	public int getMagnitude() {
-		
+
 		int intValue = amount.abs().intValue();
 		int i = 0;
-		for(; i < 12; i++) {
+		for (; i < 12; i++) {
 			if (intValue < 2 << i) {
 				break;
 			}
 		}
 		return i;
+	}
+
+	public boolean isTrained() {
+		
+		return trained;
+	}
+
+	public void setTrained(boolean trained) {
+		
+		changes = this.trained != trained;
+		this.trained = trained;
 	}
 }

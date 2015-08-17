@@ -320,9 +320,7 @@ public class Gui implements TrainingListener {
 				TableItem[] selection = table.getSelection();
 				List<Line> lines = new ArrayList<>();
 				for (TableItem item : selection) {
-					Line line = (Line) item.getData();
-					line.setConfirmed(false);
-					lines.add(line);
+					lines.add((Line) item.getData());
 				}
 				new TrainDataPopup(display, application, lines);
 			}

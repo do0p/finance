@@ -130,7 +130,7 @@ public class Application {
 
 		assertProjectSelected();
 
-		List<Line> lines = project.getConfirmedLines();
+		List<Line> lines = project.getTrainedLines();
 
 		if (lines.isEmpty()) {
 			throw new NoConfirmedLinesException();

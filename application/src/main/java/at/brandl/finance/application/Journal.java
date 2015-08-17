@@ -84,6 +84,13 @@ public class Journal implements Serializable {
 
 		return true;
 	}
+	
+
+	public List<Line> getTrainedLines() {
+		
+		return lines.stream().filter(t -> t.isTrained())
+				.collect(Collectors.toList());
+	}
 
 	public List<Line> getConfirmedLines() {
 
@@ -205,5 +212,6 @@ public class Journal implements Serializable {
 		column = DATE;
 		up = true;
 	}
+
 
 }
