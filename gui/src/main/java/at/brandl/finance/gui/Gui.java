@@ -46,21 +46,19 @@ public class Gui implements TrainingListener {
 			Journal.DATE, Journal.AMOUNT };
 
 	private final DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
+	private final Collection<Filter> filters = new ArrayList<Filter>();
 
-	private MenuItem fileNewItem, fileOpenItem, fileSaveItem, fileExitItem;
-	private MenuItem projectLoadItem, projectTrainItem;
-	private ToolItem trainData, refreshData;
-	private Table table;
-	private Shell shell;
-	private Display display;
-	private Application application;
+	private final Display display;
+	private final Shell shell;
+	private final Application application;
+	private final Table table;
+
+	private MenuItem fileNewItem, fileOpenItem, fileSaveItem, fileExitItem,
+			projectLoadItem, projectTrainItem, projectExportCsv;
+	private ToolItem confirmAll, refreshData;
+	private Button confirmedCheck, unconfirmedCheck, expensesCheck,
+			incomeCheck, trainingDataCheck;
 	private Combo combo;
-	private Button confirmedCheck;
-	private Button unconfirmedCheck;
-	private Button expensesCheck;
-	private Button incomeCheck;
-	private ToolItem confirmAll;
-	private Collection<Filter> filters = new ArrayList<Filter>();
 
 	public static void main(String[] args) {
 
@@ -70,11 +68,12 @@ public class Gui implements TrainingListener {
 	public Gui() {
 
 		display = new Display();
-		createShell();
+		shell = createShell();
+
 		createMenuBar();
 		createToolBar();
 		createFilters();
-		createTable();
+		table = createTable();
 
 		application = new Application();
 		application.addTrainListener(this);
@@ -94,8 +93,10 @@ public class Gui implements TrainingListener {
 		projectLoadItem.addListener(SWT.Selection, loadDataListener);
 
 		Listener trainDataListener = createTrainDataListener();
-		trainData.addListener(SWT.Selection, trainDataListener);
+		// trainData.addListener(SWT.Selection, trainDataListener);
 		projectTrainItem.addListener(SWT.Selection, trainDataListener);
+
+		projectExportCsv.addListener(SWT.Selection, createExportCsvListener());
 
 		confirmAll.addListener(SWT.Selection, createConfirmAllListener());
 
@@ -110,6 +111,23 @@ public class Gui implements TrainingListener {
 		}
 
 		exit();
+	}
+
+	private Listener createExportCsvListener() {
+
+		return new Listener() {
+			public void handleEvent(Event event) {
+
+				FileDialog dialog = createFileDialog(SWT.SAVE, "CSV", ".csv");
+				dialog.setFileName(application.getProjectName() + ".csv");
+
+				String open = dialog.open();
+				if (StringUtils.isNotBlank(open)) {
+					application.exportCsvToFile(open);
+				}
+
+			}
+		};
 	}
 
 	private Listener createConfirmAllListener() {
@@ -152,6 +170,11 @@ public class Gui implements TrainingListener {
 
 				boolean confirmed = confirmedCheck.getSelection();
 				boolean unconfirmed = unconfirmedCheck.getSelection();
+				boolean trainingData = trainingDataCheck.getSelection();
+
+				if (trainingData) {
+					return line.isTrained();
+				}
 
 				if (confirmed && unconfirmed) {
 					return true;
@@ -217,11 +240,17 @@ public class Gui implements TrainingListener {
 		incomeCheck.setSelection(true);
 		incomeCheck.pack();
 
+		trainingDataCheck = new Button(shell, SWT.CHECK);
+		trainingDataCheck.setText("training set");
+		trainingDataCheck.setSelection(false);
+		trainingDataCheck.pack();
+
 		combo.addListener(SWT.Selection, createRefreshListener());
 		confirmedCheck.addListener(SWT.Selection, createRefreshListener());
 		unconfirmedCheck.addListener(SWT.Selection, createRefreshListener());
 		expensesCheck.addListener(SWT.Selection, createRefreshListener());
 		incomeCheck.addListener(SWT.Selection, createRefreshListener());
+		trainingDataCheck.addListener(SWT.Selection, createRefreshListener());
 
 		// filters.pack();
 
@@ -248,10 +277,7 @@ public class Gui implements TrainingListener {
 		return new Listener() {
 			public void handleEvent(Event event) {
 
-				FileDialog dialog = new FileDialog(shell, SWT.SAVE);
-				dialog.setFilterNames(new String[] { "Finance Files" });
-				dialog.setFilterExtensions(new String[] { "*.fdt" });
-				dialog.setFilterPath("c:\\");
+				FileDialog dialog = createFileDialog(SWT.SAVE,  "Finance Files", "*.fdt");
 				dialog.setFileName(application.getProjectName() + ".fdt");
 
 				String open = dialog.open();
@@ -268,10 +294,8 @@ public class Gui implements TrainingListener {
 		return new Listener() {
 			public void handleEvent(Event event) {
 
-				FileDialog dialog = new FileDialog(shell, SWT.OPEN);
-				dialog.setFilterNames(new String[] { "Finance Files" });
-				dialog.setFilterExtensions(new String[] { "*.fdt" });
-				dialog.setFilterPath("c:\\");
+				FileDialog dialog = createFileDialog(SWT.OPEN,  "Finance Files", "*.fdt");
+
 
 				String open = dialog.open();
 				if (StringUtils.isNotBlank(open)) {
@@ -327,9 +351,10 @@ public class Gui implements TrainingListener {
 		};
 	}
 
-	private void createTable() {
+	private Table createTable() {
 
-		table = new Table(shell, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
+		Table table = new Table(shell, SWT.MULTI | SWT.BORDER
+				| SWT.FULL_SELECTION);
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
 		table.setLayoutData(new RowData(800, 600));
@@ -347,7 +372,7 @@ public class Gui implements TrainingListener {
 			}
 			column.pack();
 		}
-
+		return table;
 	}
 
 	private Listener createTableSortListener() {
@@ -430,8 +455,12 @@ public class Gui implements TrainingListener {
 			@Override
 			public void handleEvent(Event arg0) {
 
-				FileDialog fileDialog = new FileDialog(shell);
-				String fileName = fileDialog.open();
+				FileDialog dialog = createFileDialog(SWT.OPEN, "CSV", "*.csv");
+
+				String fileName = dialog.open();
+				if (StringUtils.isBlank(fileName)) {
+					return;
+				}
 				try {
 					application.loadData(fileName);
 				} catch (IOException e) {
@@ -455,9 +484,21 @@ public class Gui implements TrainingListener {
 				application.sort();
 				refresh();
 			}
+
+			
+
 		};
 	}
 
+	private FileDialog createFileDialog(int style, String filterName,
+			String extension) {
+		FileDialog dialog = new FileDialog(shell, style);
+		dialog.setFilterNames(new String[] { filterName });
+		dialog.setFilterExtensions(new String[] { extension });
+		dialog.setFilterPath("c:\\");
+		return dialog;
+	}
+	
 	private Listener createProjectListener() {
 
 		return new Listener() {
@@ -470,18 +511,19 @@ public class Gui implements TrainingListener {
 		};
 	}
 
-	private void createShell() {
+	private Shell createShell() {
 
-		shell = new Shell(display);
+		Shell shell = new Shell(display);
 		shell.setLayout(new RowLayout(SWT.VERTICAL));
+		return shell;
 	}
 
 	private void createToolBar() {
 
 		ToolBar toolBar = new ToolBar(shell, SWT.BORDER);
 
-		trainData = new ToolItem(toolBar, SWT.PUSH);
-		trainData.setText("Train Data");
+		// trainData = new ToolItem(toolBar, SWT.PUSH);
+		// trainData.setText("Train Data");
 
 		confirmAll = new ToolItem(toolBar, SWT.PUSH);
 		confirmAll.setText("Confirm All");
@@ -539,6 +581,9 @@ public class Gui implements TrainingListener {
 
 		projectTrainItem = new MenuItem(projectMenu, SWT.PUSH);
 		projectTrainItem.setText("&Train");
+
+		projectExportCsv = new MenuItem(projectMenu, SWT.PUSH);
+		projectExportCsv.setText("&Export CSV");
 
 		return projectMenu;
 	}

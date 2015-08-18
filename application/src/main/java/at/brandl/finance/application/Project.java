@@ -161,4 +161,9 @@ public class Project implements Serializable {
 	public List<Line> getTrainedLines() {
 		return journal.getTrainedLines();
 	}
+
+	public String toCsv() {
+
+		return journal.toCsv();
+	}
 }

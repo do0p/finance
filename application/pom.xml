@@ -12,6 +12,11 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-lang3</artifactId>
+			<version>3.4</version>
+		</dependency>
+		<dependency>
 			<groupId>at.brandl.finance</groupId>
 			<artifactId>core</artifactId>
 			<version>0.0.1-SNAPSHOT</version>

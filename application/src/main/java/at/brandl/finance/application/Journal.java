@@ -2,6 +2,8 @@ package at.brandl.finance.application;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -10,9 +12,17 @@ import java.util.List;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+import org.apache.commons.lang3.StringUtils;
+
 import at.brandl.finance.common.Line;
+import at.brandl.finance.reader.FinanceDataReader;
 
 public class Journal implements Serializable {
+
+	private static final String DATE_FORMAT = "dd.MM.yyyy";
+	private static final String SEPERATOR = ";";
+	private static final String QUOTE = "\"";
+	private static final String NL = System.lineSeparator();
 
 	public static interface Filter {
 
@@ -31,6 +41,7 @@ public class Journal implements Serializable {
 
 	private final List<Line> lines;
 
+	private transient DateFormat dateFormat;
 	private transient String column;
 	private transient boolean up;
 	private transient boolean changes;
@@ -39,6 +50,7 @@ public class Journal implements Serializable {
 		lines = new ArrayList<Line>();
 		column = DATE;
 		up = true;
+		dateFormat = new SimpleDateFormat(DATE_FORMAT);
 	}
 
 	public int size(Collection<Filter> filters) {
@@ -66,10 +78,10 @@ public class Journal implements Serializable {
 
 	public List<Line> getFilteredLines(Collection<Filter> filters) {
 
-		if(filters == null) {
+		if (filters == null) {
 			return lines;
 		}
-		
+
 		return lines.stream().filter(t -> filter(t, filters))
 				.collect(Collectors.toList());
 	}
@@ -84,10 +96,9 @@ public class Journal implements Serializable {
 
 		return true;
 	}
-	
 
 	public List<Line> getTrainedLines() {
-		
+
 		return lines.stream().filter(t -> t.isTrained())
 				.collect(Collectors.toList());
 	}
@@ -148,7 +159,6 @@ public class Journal implements Serializable {
 
 		Collections.sort(lines, createComparator());
 	}
-
 
 	private void markLinesUnchanged() {
 
@@ -211,7 +221,46 @@ public class Journal implements Serializable {
 		in.defaultReadObject();
 		column = DATE;
 		up = true;
+		dateFormat = new SimpleDateFormat(DATE_FORMAT);
 	}
 
+	public String toCsv() {
+
+		StringBuilder csv = new StringBuilder();
+		csv.append(createCsvHeader());
+		for (Line line : lines) {
+			csv.append(createCsvLine(line));
+		}
+		return csv.toString();
+	}
+
+
+
+	private String createCsvHeader() {
+
+		String header = StringUtils.join(new String[] { LABEL, CONFIDENCE,
+				CONFIRMED, DATE, AMOUNT, TEXT, REASON }, quote(SEPERATOR));
+		return quote(header) + NL;
+	}
+
+	private String quote(String text) {
+
+		return QUOTE + text + QUOTE;
+	}
+
+	private String createCsvLine(Line line) {
+
+		String label = quote(line.getLabel());
+		String confidence = String.format("%.3f", line.getConfidence() );
+		String confirmed = line.isConfirmed() ? line.isTrained() ? "t" : "c" : "u";
+		String date = dateFormat.format(line.getDate());
+		String amount = String.format("%.3f", line.getAmount() );
+		String text = line.getText(FinanceDataReader.TEXT);
+		text = text == null ? "" : text;
+		String reason = line.getText(FinanceDataReader.REASON);
+		reason = reason == null ? "" : reason;
+		
+		return StringUtils.join(new String[] {label, confidence, confirmed, date, amount, text, reason}, SEPERATOR) + NL;
+	}
 
 }

@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.StringWriter;
 import java.util.Collection;
 import java.util.HashMap;
@@ -211,6 +212,21 @@ public class Application {
 		}
 	}
 
+	
+	public void exportCsvToFile(String filename) {
+		
+		assertProjectSelected();
+
+		try (OutputStream os = new FileOutputStream(
+				filename)) {
+
+			new OutputStreamWriter(os).write(project.toCsv());
+			
+		} catch (IOException e) {
+			throw new SaveProjectFailedException(e);
+		}
+	}
+	
 	public void readFromFile(String filename, boolean force) {
 
 		Project project;
@@ -352,5 +368,7 @@ public class Application {
 
 		return project.getLines(filters);
 	}
+
+
 
 }
