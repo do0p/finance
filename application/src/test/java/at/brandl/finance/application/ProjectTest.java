@@ -34,7 +34,7 @@ public class ProjectTest {
 			reader.parse(is);
 			project.readData(reader);
 		}
-		Assert.assertEquals(159,  project.getSize(null));
+		Assert.assertFalse(project.getLines(null).isEmpty());
 	}
 	
 	@Test
