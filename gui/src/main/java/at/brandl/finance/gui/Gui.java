@@ -11,10 +11,12 @@ import java.util.List;
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.graphics.Rectangle;
-import org.eclipse.swt.layout.RowData;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
+import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
@@ -59,6 +61,7 @@ public class Gui implements TrainingListener {
 	private Button confirmedCheck, unconfirmedCheck, expensesCheck,
 			incomeCheck, trainingDataCheck;
 	private Combo combo;
+	private Composite filtersComposite;
 
 	public static void main(String[] args) {
 
@@ -214,33 +217,33 @@ public class Gui implements TrainingListener {
 		filters.add(confirmedFilter);
 		filters.add(expensesFilter);
 
-		// Composite filters = new Composite(shell, SWT.NONE);
-		// filters.setLayoutData(new RowData(800, 80));
+		filtersComposite = new Composite(shell, SWT.NONE);
+		filtersComposite.setLayout(new RowLayout(SWT.HORIZONTAL));
 
-		combo = new Combo(shell, SWT.DROP_DOWN | SWT.READ_ONLY);
+		combo = new Combo(filtersComposite, SWT.DROP_DOWN | SWT.READ_ONLY);
 		combo.pack();
 
-		confirmedCheck = new Button(shell, SWT.CHECK);
+		confirmedCheck = new Button(filtersComposite, SWT.CHECK);
 		confirmedCheck.setText("confirmed");
 		confirmedCheck.setSelection(true);
 		confirmedCheck.pack();
 
-		unconfirmedCheck = new Button(shell, SWT.CHECK);
+		unconfirmedCheck = new Button(filtersComposite, SWT.CHECK);
 		unconfirmedCheck.setText("unconfirmed");
 		unconfirmedCheck.setSelection(true);
 		unconfirmedCheck.pack();
 
-		expensesCheck = new Button(shell, SWT.CHECK);
+		expensesCheck = new Button(filtersComposite, SWT.CHECK);
 		expensesCheck.setText("expenses");
 		expensesCheck.setSelection(true);
 		expensesCheck.pack();
 
-		incomeCheck = new Button(shell, SWT.CHECK);
+		incomeCheck = new Button(filtersComposite, SWT.CHECK);
 		incomeCheck.setText("income");
 		incomeCheck.setSelection(true);
 		incomeCheck.pack();
 
-		trainingDataCheck = new Button(shell, SWT.CHECK);
+		trainingDataCheck = new Button(filtersComposite, SWT.CHECK);
 		trainingDataCheck.setText("training set");
 		trainingDataCheck.setSelection(false);
 		trainingDataCheck.pack();
@@ -252,7 +255,7 @@ public class Gui implements TrainingListener {
 		incomeCheck.addListener(SWT.Selection, createRefreshListener());
 		trainingDataCheck.addListener(SWT.Selection, createRefreshListener());
 
-		// filters.pack();
+		filtersComposite.pack();
 
 	}
 
@@ -357,7 +360,10 @@ public class Gui implements TrainingListener {
 				| SWT.FULL_SELECTION);
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
-		table.setLayoutData(new RowData(800, 600));
+		GridData gridData = new GridData(SWT.FILL, SWT.FILL, true, true);
+		gridData.heightHint = 600;
+		gridData.widthHint = 800;
+		table.setLayoutData(gridData);
 		for (int i = 0; i < TITLES.length; i++) {
 			TableColumn column = new TableColumn(table, SWT.NONE);
 			column.setText(TITLES[i]);
@@ -428,6 +434,8 @@ public class Gui implements TrainingListener {
 		combo.setText(labelFilterText);
 		combo.pack();
 
+		filtersComposite.pack();
+		
 		table.removeAll();
 		for (Line line : application.getLines(filters)) {
 			createItem(line);
@@ -514,7 +522,8 @@ public class Gui implements TrainingListener {
 	private Shell createShell() {
 
 		Shell shell = new Shell(display);
-		shell.setLayout(new RowLayout(SWT.VERTICAL));
+		shell.setLayout(new GridLayout(1, false));
+		shell.setText("Finance Data Reader");
 		return shell;
 	}
 

@@ -43,6 +43,7 @@ public class TrainDataPopup {
 
 		Shell popUp = new Shell(display);
 		popUp.setLayout(new RowLayout(SWT.VERTICAL));
+		popUp.setText("Train Data");
 		if (lines.isEmpty()) {
 			popUp.close();
 			return;
