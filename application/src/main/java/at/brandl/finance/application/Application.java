@@ -11,13 +11,17 @@ import java.io.ObjectOutputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.StringWriter;
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
 import java.util.zip.GZIPInputStream;
@@ -47,11 +51,11 @@ import at.brandl.finance.reader.NodeGenerator;
 public class Application {
 
 	public static interface ProjectSelectionListener {
-		
+
 		void onProjectSelection();
-		
+
 	}
-	
+
 	public static interface TrainingListener {
 
 		void onTrainingFinished();
@@ -62,8 +66,9 @@ public class Application {
 	private final Map<String, Project> projects = new HashMap<>();
 	private final Collection<TrainingListener> trainingListeners = new CopyOnWriteArrayList<>();
 	private final Collection<ProjectSelectionListener> selectionListeners = new CopyOnWriteArrayList<>();
-	private final Executor executor = Executors.newSingleThreadExecutor();
+	private final ExecutorService executor = Executors.newSingleThreadExecutor();
 	private final Core<LinearModel> core = new LinearCore();
+	private final Collection<FutureTask<LinearModel>> tasks = Collections.synchronizedCollection(new ArrayList<>());
 	private Project project;
 
 	public void createProject(String projectName) {
@@ -82,7 +87,7 @@ public class Application {
 			if (!force && project.hasChanges()) {
 				throw new ProjectWithUnsafedChangesException();
 			}
-			project.release();
+			releaseProject();
 
 		}
 
@@ -92,14 +97,40 @@ public class Application {
 			throw new NoSuchProjectFoundException(projectName);
 		}
 
-		
-		for(ProjectSelectionListener listener : selectionListeners) {
-			
+		for (ProjectSelectionListener listener : selectionListeners) {
+
 			listener.onProjectSelection();
 		}
 	}
 
-	public Prediction predict(Line line) {
+	public void releaseProject() {
+
+		synchronized (tasks) {
+
+			for (FutureTask<LinearModel> task : tasks) {
+				task.cancel(true);
+			}
+			tasks.clear();
+
+			
+			project.release();
+			project = null;
+		}
+	}
+	
+	public void close() {
+		
+		releaseProject();
+		executor.shutdownNow();
+		core.close();
+	}
+	
+	public boolean isTrainingRunning() {
+		
+		return !tasks.isEmpty();
+	}
+
+	public void predict(Line line) {
 
 		assertProjectSelected();
 
@@ -108,8 +139,7 @@ public class Application {
 		RewindableReader restore = project.getRestore();
 		LinearModel model = project.getModel();
 
-		if (labels == null || wordFeatures == null || restore == null
-				|| model == null) {
+		if (labels == null || wordFeatures == null || restore == null || model == null) {
 			throw new UntrainedProjectException();
 		}
 
@@ -120,7 +150,8 @@ public class Application {
 			String label = labels[(int) predict[0]];
 			double confidence = predict[1];
 
-			return new Prediction(label, confidence);
+			line.setLabel(label);
+			line.setConfidence(confidence);
 
 		} catch (IOException e) {
 			throw new RuntimeException(e);
@@ -161,7 +192,9 @@ public class Application {
 		try (InputStream is = new FileInputStream(fileName)) {
 			CsvReader reader = new CsvReader();
 			reader.parse(is);
-			return project.readData(reader);
+			int numLines = project.readData(reader);
+			sort();
+			return numLines;
 		}
 	}
 
@@ -202,8 +235,7 @@ public class Application {
 
 		assertProjectSelected();
 
-		try (OutputStream os = new GZIPOutputStream(new FileOutputStream(
-				filename))) {
+		try (OutputStream os = new GZIPOutputStream(new FileOutputStream(filename))) {
 
 			project.markUnchanged();
 			new ObjectOutputStream(os).writeObject(project);
@@ -212,28 +244,26 @@ public class Application {
 		}
 	}
 
-	
 	public void exportCsvToFile(String filename) {
-		
+
 		assertProjectSelected();
 
-		try (OutputStream os = new FileOutputStream(
-				filename)) {
+		try (OutputStream os = new FileOutputStream(filename)) {
 
 			new OutputStreamWriter(os).write(project.toCsv());
-			
+
 		} catch (IOException e) {
 			throw new SaveProjectFailedException(e);
 		}
 	}
-	
+
 	public void readFromFile(String filename, boolean force) {
 
 		Project project;
 		try (InputStream is = new GZIPInputStream(new FileInputStream(filename))) {
 
 			project = (Project) new ObjectInputStream(is).readObject();
-	
+
 		} catch (FileNotFoundException e) {
 
 			throw new OpenProjectFailedException(e);
@@ -255,7 +285,7 @@ public class Application {
 
 		trainingListeners.remove(trainingListener);
 	}
-	
+
 	public void addSelectionListener(ProjectSelectionListener selectionListener) {
 
 		selectionListeners.add(selectionListener);
@@ -284,24 +314,35 @@ public class Application {
 		project.sort();
 	}
 
-
 	private FutureTask<LinearModel> scheduleTraining(Data data) {
-		FutureTask<LinearModel> future = new FutureTask<LinearModel>(
-				new Callable<LinearModel>() {
 
-					@Override
-					public LinearModel call() throws Exception {
+		synchronized (tasks) {
+			
+			Iterator<FutureTask<LinearModel>> iterator = tasks.iterator();
+			while (iterator.hasNext()) {
+				FutureTask<LinearModel> task = iterator.next();
+				task.cancel(false);
+				iterator.remove();
+			}
 
-						return core.train(data);
-					}
-				});
+			FutureTask<LinearModel> future = new FutureTask<LinearModel>(new Callable<LinearModel>() {
 
-		executor.execute(future);
-		return future;
+				@Override
+				public LinearModel call() throws Exception {
+
+					tasks.remove(this);
+					return core.train(data);
+				}
+			});
+
+			tasks.add(future);
+			executor.execute(future);
+
+			return future;
+		}
 	}
 
-	private void notifyListners(FutureTask<LinearModel> future,
-			NodeGenerator nodeGenerator, StringWriter out) {
+	private void notifyListners(FutureTask<LinearModel> future, NodeGenerator nodeGenerator, StringWriter out) {
 
 		new Thread(new Runnable() {
 
@@ -310,18 +351,21 @@ public class Application {
 				LinearModel model;
 				try {
 					model = future.get();
+					project.setModel(model);
+					project.setLabels(nodeGenerator.getLabels());
+					project.setWordFeatures(nodeGenerator.getWordFeatures());
+					project.setRestore(createRestore(out));
+
+					for (TrainingListener listener : trainingListeners) {
+						listener.onTrainingFinished();
+					}
+
+				} catch (InterruptedException | CancellationException e) {
+
+					// ignore this case
 				} catch (Exception e) {
 
 					throw new TrainingFailedException(e);
-				}
-
-				project.setModel(model);
-				project.setLabels(nodeGenerator.getLabels());
-				project.setWordFeatures(nodeGenerator.getWordFeatures());
-				project.setRestore(createRestore(out));
-
-				for (TrainingListener listener : trainingListeners) {
-					listener.onTrainingFinished();
 				}
 
 			}
@@ -358,17 +402,24 @@ public class Application {
 	private RewindableReader createReader(Line line, String[] wordFeatures) {
 
 		RewindableStringReader reader = new RewindableStringReader();
-		String nodeStr = new NodeGenerator().createNodeString(line,
-				wordFeatures);
+		String nodeStr = new NodeGenerator().createNodeString(line, wordFeatures);
 		reader.addLine(nodeStr);
 		return reader;
 	}
 
 	public List<Line> getLines(Collection<Filter> filters) {
 
+		assertProjectSelected();
 		return project.getLines(filters);
 	}
 
+	public boolean hasChanges() {
+
+		if (project == null) {
+			return false;
+		}
+		return project.hasChanges();
+	}
 
 
 }

@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.FutureTask;
@@ -40,7 +40,7 @@ public class LinearCore implements Core<LinearModel> {
 	private static final double TRESHHOLD = 0.0001;
 	private static final double LAMBDA = 0.0000001;
 	private final Sigmoid sigmoid = new Sigmoid();
-	private final Executor executor = Executors.newFixedThreadPool(8);
+	private final ExecutorService executor = Executors.newFixedThreadPool(8);
 
 	@Override
 	public LinearModel train(Data data) {
@@ -77,6 +77,12 @@ public class LinearCore implements Core<LinearModel> {
 		return new double[]{predictedLabel, value};
 	}
 
+	@Override
+	public void close() {
+		
+		executor.shutdownNow();
+	}
+	
 	private RealMatrix createTheta(Future<double[]>[] futures, int numLabels) {
 
 		try {
@@ -269,4 +275,6 @@ public class LinearCore implements Core<LinearModel> {
 		}
 		return values;
 	}
+
+
 }

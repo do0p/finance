@@ -77,9 +77,9 @@ public class ApplicationTest {
 			public Boolean call() throws Exception {
 
 				Line line = createLine();
-				Prediction predict = application.predict(line);
-				Assert.assertNotNull(predict.getLabel());
-				Assert.assertFalse(predict.getConfidence() <= 0);
+				application.predict(line);
+				Assert.assertNotNull(line.getLabel());
+				Assert.assertFalse(line.getConfidence() <= 0);
 
 				return true;
 			}
@@ -103,9 +103,9 @@ public class ApplicationTest {
 				application.readFromFile(saveFile, false);
 
 				Line line = createLine();
-				Prediction predict = application.predict(line);
-				Assert.assertNotNull(predict.getLabel());
-				Assert.assertFalse(predict.getConfidence() <= 0);
+				application.predict(line);
+				Assert.assertNotNull(line.getLabel());
+				Assert.assertFalse(line.getConfidence() <= 0);
 
 				return true;
 

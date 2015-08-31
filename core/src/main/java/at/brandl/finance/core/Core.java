@@ -9,4 +9,6 @@ public interface Core<M extends Model> {
 
 	double[] predict(M model, NodeSet data);
 
+	void close();
+
 }
