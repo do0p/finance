@@ -112,21 +112,22 @@ public class Application {
 			}
 			tasks.clear();
 
-			
-			project.release();
-			project = null;
+			if (project != null) {
+				project.release();
+				project = null;
+			}
 		}
 	}
-	
+
 	public void close() {
-		
+
 		releaseProject();
 		executor.shutdownNow();
 		core.close();
 	}
-	
+
 	public boolean isTrainingRunning() {
-		
+
 		return !tasks.isEmpty();
 	}
 
@@ -317,7 +318,7 @@ public class Application {
 	private FutureTask<LinearModel> scheduleTraining(Data data) {
 
 		synchronized (tasks) {
-			
+
 			Iterator<FutureTask<LinearModel>> iterator = tasks.iterator();
 			while (iterator.hasNext()) {
 				FutureTask<LinearModel> task = iterator.next();
@@ -420,6 +421,5 @@ public class Application {
 		}
 		return project.hasChanges();
 	}
-
 
 }
