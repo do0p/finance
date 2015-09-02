@@ -40,9 +40,10 @@ public class DataTable extends Composite {
 		setLayout(new GridLayout(1, false));
 		
 		this.filtersComposite = new FilterComposite(this);
+		filtersComposite.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 		this.table = new Table(this, SWT.MULTI | SWT.BORDER | SWT.FULL_SELECTION);
 
-		filtersComposite.addListener(SWT.Selection, createRefreshListener());
+		filtersComposite.addListener(createRefreshListener());
 		table.setLinesVisible(true);
 		table.setHeaderVisible(true);
 

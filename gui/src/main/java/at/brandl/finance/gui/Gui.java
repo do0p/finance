@@ -387,6 +387,8 @@ public class Gui implements TrainingListener {
 			} catch (ProjectWithUnsafedChangesException e) {
 				createUnsafedProjectMessage();
 			} catch (RuntimeException e) {
+				
+				e.printStackTrace(System.err);
 				display.dispose();
 			}
 		}

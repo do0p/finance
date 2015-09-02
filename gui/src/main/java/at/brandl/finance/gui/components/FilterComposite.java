@@ -5,14 +5,17 @@ import java.util.Collection;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.RowLayout;
+import org.eclipse.swt.layout.GridData;
+import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Listener;
+import org.eclipse.swt.widgets.Text;
 
 import at.brandl.finance.application.Journal.Filter;
 import at.brandl.finance.common.Line;
+import at.brandl.finance.reader.FinanceDataReader;
 
 public class FilterComposite extends Composite {
 
@@ -21,7 +24,7 @@ public class FilterComposite extends Composite {
 		@Override
 		public boolean accept(Line line) {
 
-			if (StringUtils.isBlank(labelSelection.getText())) {
+			if (StringUtils.isBlank(labelSelection.getText()) || labelSelection.getText().startsWith("-")) {
 				return true;
 			}
 
@@ -77,16 +80,46 @@ public class FilterComposite extends Composite {
 		}
 	};
 
+	private class TextFilter implements Filter {
+
+		@Override
+		public boolean accept(Line line) {
+
+			String searchText = searchField.getText();
+
+			if (StringUtils.isBlank(searchText)) {
+				return true;
+			}
+
+			String text = line.getText(FinanceDataReader.TEXT);
+			String reason = line.getText(FinanceDataReader.REASON);
+
+			return matches(text, searchText) || matches(reason, searchText);
+
+		}
+
+		private boolean matches(String text, String searchText) {
+			return text != null && text.toLowerCase().contains(searchText.toLowerCase());
+		}
+
+	};
+
 	private final Collection<Filter> filters = new ArrayList<Filter>();
 	private Button confirmedCheck, unconfirmedCheck, expensesCheck, incomeCheck, trainingDataCheck;
+	private Text searchField;
 	private Combo labelSelection;
 
 	public FilterComposite(Composite parent) {
 		super(parent, SWT.NONE);
 
-		setLayout(new RowLayout(SWT.HORIZONTAL));
+		GridLayout layout = new GridLayout(7, false);
+		layout.horizontalSpacing = 7;
+		setLayout(layout);
 
 		labelSelection = new Combo(this, SWT.DROP_DOWN | SWT.READ_ONLY);
+		GridData labelLayoutData = new GridData();
+		labelLayoutData.widthHint = 180;
+		labelSelection.setLayoutData(labelLayoutData);
 		labelSelection.pack();
 
 		confirmedCheck = new Button(this, SWT.CHECK);
@@ -109,9 +142,17 @@ public class FilterComposite extends Composite {
 		trainingDataCheck.setText("training set");
 		trainingDataCheck.pack();
 
+		searchField = new Text(this, SWT.SINGLE);
+		GridData searchLayoutData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+		searchLayoutData.widthHint = 180;
+		searchField.setLayoutData(searchLayoutData);
+		searchField.setMessage("search text");
+		searchField.pack();
+		
 		filters.add(new LabelFilter());
 		filters.add(new ExpensesFilter());
 		filters.add(new ConfirmedFilter());
+		filters.add(new TextFilter());
 
 		init();
 
@@ -120,22 +161,24 @@ public class FilterComposite extends Composite {
 	}
 
 	public void init() {
-		
+
 		labelSelection.removeAll();
 		confirmedCheck.setSelection(true);
 		unconfirmedCheck.setSelection(true);
 		expensesCheck.setSelection(true);
 		incomeCheck.setSelection(true);
 		trainingDataCheck.setSelection(false);
+		searchField.setText("");
 	}
 
-	public void addListener(int eventType, Listener listener) {
-		labelSelection.addListener(eventType, listener);
-		confirmedCheck.addListener(eventType, listener);
-		unconfirmedCheck.addListener(eventType, listener);
-		expensesCheck.addListener(eventType, listener);
-		incomeCheck.addListener(eventType, listener);
-		trainingDataCheck.addListener(eventType, listener);
+	public void addListener(Listener listener) {
+		labelSelection.addListener(SWT.Selection , listener);
+		confirmedCheck.addListener(SWT.Selection, listener);
+		unconfirmedCheck.addListener(SWT.Selection, listener);
+		expensesCheck.addListener(SWT.Selection, listener);
+		incomeCheck.addListener(SWT.Selection, listener);
+		trainingDataCheck.addListener(SWT.Selection, listener);
+		searchField.addListener(SWT.Modify, listener);
 	}
 
 	public Collection<Filter> getFilters() {
@@ -143,20 +186,22 @@ public class FilterComposite extends Composite {
 	}
 
 	public void setLabels(String... labels) {
-		
+
 		String labelFilterText = labelSelection.getText();
 
 		labelSelection.removeAll();
-		labelSelection.add(" ");
-	
+		labelSelection.add("- select a label -");
+
 		if (labels != null) {
 			for (String label : labels) {
 				labelSelection.add(label);
 			}
 		}
-		labelSelection.setText(labelFilterText);
-		labelSelection.pack();
-		pack();
+		if(StringUtils.isNotBlank(labelFilterText)) {
+			labelSelection.setText(labelFilterText);
+		} else {
+			labelSelection.setText("- select a label -");
+		}
 	}
 
 }
