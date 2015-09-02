@@ -331,7 +331,6 @@ public class Application {
 				@Override
 				public LinearModel call() throws Exception {
 
-					tasks.remove(this);
 					return core.train(data);
 				}
 			});
@@ -352,6 +351,7 @@ public class Application {
 				LinearModel model;
 				try {
 					model = future.get();
+					tasks.remove(future);
 					project.setModel(model);
 					project.setLabels(nodeGenerator.getLabels());
 					project.setWordFeatures(nodeGenerator.getWordFeatures());
@@ -363,11 +363,13 @@ public class Application {
 
 				} catch (InterruptedException | CancellationException e) {
 
-					// ignore this case
+					tasks.remove(future);
 				} catch (Exception e) {
 
+					tasks.remove(future);
 					throw new TrainingFailedException(e);
-				}
+				} 
+				
 
 			}
 		}).start();

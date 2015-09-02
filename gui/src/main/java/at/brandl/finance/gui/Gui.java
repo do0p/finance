@@ -10,6 +10,7 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -31,6 +32,7 @@ public class Gui implements TrainingListener {
 	private Shell shell;
 	private Application application;
 	private DataTable table;
+	private Label statusField;
 
 	public Gui() {
 
@@ -43,6 +45,8 @@ public class Gui implements TrainingListener {
 		createToolBar();
 
 		createTable();
+		
+		createStatusBar();
 
 		try {
 			run(display);
@@ -51,6 +55,8 @@ public class Gui implements TrainingListener {
 			application.close();
 		}
 	}
+
+	
 
 	public static void main(String[] args) {
 
@@ -61,12 +67,20 @@ public class Gui implements TrainingListener {
 
 		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application, table.getSelection());
 		trainDataPopup.open();
+		if(application.isTrainingRunning()) {
+			statusField.setText("Training in progress");
+			statusField.pack();
+		}
 	}
 
 	private void trainAll() {
 
 		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application);
 		trainDataPopup.open();
+		if(application.isTrainingRunning()) {
+			statusField.setText("Training in progress");
+			statusField.pack();
+		}
 	}
 
 	private void export() {
@@ -87,7 +101,7 @@ public class Gui implements TrainingListener {
 		String open = dialog.open();
 		if (StringUtils.isNotBlank(open)) {
 			application.readFromFile(open, false);
-			table.refresh();
+			refresh();
 		}
 	}
 
@@ -97,7 +111,7 @@ public class Gui implements TrainingListener {
 			line.setConfirmed(true);
 			line.setConfidence(1d);
 		}
-		table.refresh();
+		refresh();
 	}
 
 	private void createProject() {
@@ -127,7 +141,7 @@ public class Gui implements TrainingListener {
 				}
 				// shell.layout();
 
-				table.refresh();
+				refresh();
 			} catch (UntrainedProjectException e) {
 				// ignore this case
 			} catch (IOException e) {
@@ -167,6 +181,14 @@ public class Gui implements TrainingListener {
 			application.saveToFile(open);
 		}
 	}
+	
+	private void refresh() {
+		table.refresh();
+		if(!application.isTrainingRunning()) {
+			statusField.setText(" ");
+			statusField.pack();
+		}
+	}
 
 	@Override
 	public void onTrainingFinished() {
@@ -179,10 +201,9 @@ public class Gui implements TrainingListener {
 
 		Display.getDefault().asyncExec(new Runnable() {
 			public void run() {
-				table.refresh();
+				refresh();
 			}
 		});
-
 	}
 
 	private FileDialog createFileDialog(int style, String filterName, String extension) {
@@ -214,6 +235,15 @@ public class Gui implements TrainingListener {
 		application.addTrainListener(this);
 	}
 
+	
+	private void createStatusBar() {
+	
+		statusField = new Label(shell, SWT.SHADOW_IN | SWT.RIGHT);
+		statusField.setText(" ");
+		statusField.pack();
+		statusField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+	}
+	
 	private void createTable() {
 
 		table = new DataTable(shell, application);
@@ -318,8 +348,10 @@ public class Gui implements TrainingListener {
 		createToolItem(toolBar, "Refresh", new Listener() {
 			@Override
 			public void handleEvent(Event arg0) {
-				table.refresh();
+				refresh();
 			}
+
+
 		});
 
 		toolBar.pack();
