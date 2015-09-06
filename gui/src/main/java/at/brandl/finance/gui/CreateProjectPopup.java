@@ -1,5 +1,7 @@
 package at.brandl.finance.gui;
 
+import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
+
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -31,10 +33,12 @@ public class CreateProjectPopup extends Dialog {
 		GridData gridData = new GridData();
 		gridData.widthHint = 200;
 		text.setLayoutData(gridData);
-		text.setMessage("Project Name");
+		
+		text.setMessage(getLocalized("ProjectName"));
+		
 
 		Button button = new Button(popUp, SWT.PUSH);
-		button.setText("save");
+		button.setText(getLocalized("Save"));
 
 		button.addListener(SWT.Selection, new Listener() {
 

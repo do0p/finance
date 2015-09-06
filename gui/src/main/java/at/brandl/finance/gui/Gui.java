@@ -1,5 +1,6 @@
 package at.brandl.finance.gui;
 
+import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
 import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
@@ -68,7 +69,7 @@ public class Gui implements TrainingListener {
 		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application, table.getSelection());
 		trainDataPopup.open();
 		if(application.isTrainingRunning()) {
-			statusField.setText("Training in progress");
+			statusField.setText(getLocalized("InProgress"));
 			statusField.pack();
 		}
 	}
@@ -78,7 +79,7 @@ public class Gui implements TrainingListener {
 		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application);
 		trainDataPopup.open();
 		if(application.isTrainingRunning()) {
-			statusField.setText("Training in progress");
+			statusField.setText(getLocalized("InProgress"));
 			statusField.pack();
 		}
 	}
@@ -117,7 +118,7 @@ public class Gui implements TrainingListener {
 	private void createProject() {
 
 		CreateProjectPopup createProjectPopup = new CreateProjectPopup(shell);
-		createProjectPopup.setText("New Project");
+		createProjectPopup.setText(getLocalized("NewProject"));
 		String text = createProjectPopup.open();
 
 		if (StringUtils.isNotBlank(text)) {

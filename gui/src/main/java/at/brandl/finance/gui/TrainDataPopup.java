@@ -1,5 +1,7 @@
 package at.brandl.finance.gui;
 
+import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
+
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.List;
@@ -38,13 +40,12 @@ public class TrainDataPopup extends Dialog {
 	private Application application;
 
 	public TrainDataPopup(Shell parent, Application application) {
-
 		this(parent, application, application.getUnconfirmedLines());
-	
 	}
 
 	public TrainDataPopup(Shell parent, Application application, List<Line> lines) {
 		super(parent, 0);
+		
 		this.lines = lines;
 		this.application = application;
 	}
@@ -56,24 +57,24 @@ public class TrainDataPopup extends Dialog {
 		popUp.setText(getText());
 		GridLayout layout = new GridLayout(2, false);
 		popUp.setLayout(layout);
-		popUp.setText("Train Data");
+		popUp.setText(getLocalized("TrainData"));
 		if (lines.isEmpty()) {
 			popUp.close();
 			return null;
 		}
 
 		Label dateLabel = new Label(popUp, SWT.RIGHT);
-		dateLabel.setText("Date:");
+		dateLabel.setText(getLocalized("Date") + ":");
 		dateLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
 		date = new Label(popUp, SWT.HORIZONTAL);
 
 		Label amountLabel = new Label(popUp, SWT.RIGHT);
-		amountLabel.setText("Amount:");
+		amountLabel.setText(getLocalized("Amount") + ":");
 		amountLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
 		amount = new Label(popUp, SWT.HORIZONTAL);
 
 		Label textLabel = new Label(popUp, SWT.RIGHT);
-		textLabel.setText("Text:");
+		textLabel.setText(getLocalized("Text") + ":");
 		textLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
 		text = new Label(popUp, SWT.WRAP );
 		GridData textLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -81,7 +82,7 @@ public class TrainDataPopup extends Dialog {
 		text.setLayoutData(textLayoutData);
 
 		Label reasonLabel = new Label(popUp, SWT.RIGHT);
-		reasonLabel.setText("Reason:");
+		reasonLabel.setText(getLocalized("Reason") + ":");
 		reasonLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
 		reason = new Label(popUp, SWT.HORIZONTAL);
 		GridData reasonLayoutData = new GridData(SWT.FILL, SWT.FILL, true, true);
@@ -89,23 +90,23 @@ public class TrainDataPopup extends Dialog {
 		reason.setLayoutData(reasonLayoutData);
 
 		Label confidenceLabel = new Label(popUp, SWT.RIGHT);
-		confidenceLabel.setText("Confidence:");
+		confidenceLabel.setText(getLocalized("Confidence") + ":");
 		confidenceLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.TOP, false, false));
 		confidence = new Label(popUp, SWT.HORIZONTAL);
 
 		Label labelLabel = new Label(popUp, SWT.RIGHT);
-		labelLabel.setText("Label:");
+		labelLabel.setText(getLocalized("Label") + ":");
 		labelLabel.setLayoutData(new GridData(SWT.RIGHT, SWT.CENTER, false, false));
 		combo = new Combo(popUp, SWT.DROP_DOWN);
 
 		if (lines.size() > 1) {
 			nextButton = new Button(popUp, SWT.PUSH);
-			nextButton.setText("next");
+			nextButton.setText(getLocalized("Next"));
 			nextButton.addListener(SWT.Selection, createNextButtonListener(lines));
 		}
 
 		trainButton = new Button(popUp, SWT.PUSH);
-		trainButton.setText("train");
+		trainButton.setText(getLocalized("Train"));
 
 		String[] labels = application.getLabels();
 		if (labels != null) {
