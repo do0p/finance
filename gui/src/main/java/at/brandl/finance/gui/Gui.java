@@ -259,8 +259,8 @@ public class Gui implements TrainingListener {
 	private void createMenuBar() {
 
 		Menu menuBar = new Menu(shell, SWT.BAR);
-		createMenuItem(menuBar, "&File", createFileMenu());
-		createMenuItem(menuBar, "&Project", createProjectMenu());
+		createMenuItem(menuBar, getLocalized("&File"), createFileMenu());
+		createMenuItem(menuBar, getLocalized("&Project"), createProjectMenu());
 		shell.setMenuBar(menuBar);
 	}
 
@@ -275,21 +275,21 @@ public class Gui implements TrainingListener {
 
 		Menu projectMenu = new Menu(shell, SWT.DROP_DOWN);
 
-		createMenuItem(projectMenu, "&Load", new Listener() {
+		createMenuItem(projectMenu, getLocalized("&Load"), new Listener() {
 			@Override
 			public void handleEvent(Event arg0) {
 				loadData();
 			}
 		});
 
-		createMenuItem(projectMenu, "&Train", new Listener() {
+		createMenuItem(projectMenu, getLocalized("&Train"), new Listener() {
 			@Override
 			public void handleEvent(Event arg0) {
 				trainAll();
 			}
 		});
 
-		createMenuItem(projectMenu, "&Export CSV", new Listener() {
+		createMenuItem(projectMenu, getLocalized("&ExportCSV"), new Listener() {
 			public void handleEvent(Event event) {
 				export();
 			}
@@ -302,7 +302,7 @@ public class Gui implements TrainingListener {
 
 		Menu fileMenu = new Menu(shell, SWT.DROP_DOWN);
 
-		createMenuItem(fileMenu, "&New", new Listener() {
+		createMenuItem(fileMenu, getLocalized("&New"), new Listener() {
 			@Override
 			public void handleEvent(Event arg0) {
 				handleUnsafedProject();
@@ -310,20 +310,20 @@ public class Gui implements TrainingListener {
 			}
 		});
 
-		createMenuItem(fileMenu, "&Open", new Listener() {
+		createMenuItem(fileMenu, getLocalized("&Open"), new Listener() {
 			public void handleEvent(Event event) {
 				handleUnsafedProject();
 				open();
 			}
 		});
 
-		createMenuItem(fileMenu, "&Save", new Listener() {
+		createMenuItem(fileMenu, getLocalized("&Save"), new Listener() {
 			public void handleEvent(Event event) {
 				save();
 			}
 		});
 
-		createMenuItem(fileMenu, "E&xit", new Listener() {
+		createMenuItem(fileMenu, getLocalized("E&xit"), new Listener() {
 			public void handleEvent(Event event) {
 				handleUnsafedProject();
 				shell.dispose();
@@ -339,14 +339,14 @@ public class Gui implements TrainingListener {
 		Rectangle clientArea = shell.getClientArea();
 		toolBar.setLocation(clientArea.x, clientArea.y);
 
-		createToolItem(toolBar, "Confirm All", new Listener() {
+		createToolItem(toolBar, getLocalized("ConfirmAll"), new Listener() {
 			@Override
 			public void handleEvent(Event arg0) {
 				confirmAll();
 			}
 		});
 
-		createToolItem(toolBar, "Refresh", new Listener() {
+		createToolItem(toolBar, getLocalized("Refresh"), new Listener() {
 			@Override
 			public void handleEvent(Event arg0) {
 				refresh();

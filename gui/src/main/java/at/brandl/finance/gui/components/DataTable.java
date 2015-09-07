@@ -1,5 +1,5 @@
 package at.brandl.finance.gui.components;
-
+import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -25,6 +25,7 @@ import at.brandl.finance.reader.FinanceDataReader;
 
 public class DataTable extends Composite {
 
+	private static final String COLUMN_NAME = "name";
 	private final DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
 	private static final String[] TITLES = { " ", Journal.LABEL, Journal.CONFIDENCE, Journal.CONFIRMED, Journal.DATE,
 			Journal.AMOUNT, Journal.TEXT, Journal.REASON };
@@ -56,7 +57,7 @@ public class DataTable extends Composite {
 			@Override
 			public void handleEvent(Event e) {
 				TableColumn currentColumn = (TableColumn) e.widget;
-				String columnName = currentColumn.getText();
+				String columnName = (String) currentColumn.getData(COLUMN_NAME);
 
 				// determine new sort column and direction
 				TableColumn sortColumn = table.getSortColumn();
@@ -79,7 +80,8 @@ public class DataTable extends Composite {
 
 		for (int i = 0; i < TITLES.length; i++) {
 			TableColumn column = new TableColumn(table, SWT.NONE);
-			column.setText(TITLES[i]);
+			column.setText(getLocalized(TITLES[i]));
+			column.setData(COLUMN_NAME, TITLES[i]);
 			if (Journal.AMOUNT.equals(column.getText()) || Journal.CONFIDENCE.equals(column.getText())) {
 				column.setAlignment(SWT.RIGHT);
 			} else {

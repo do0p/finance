@@ -1,5 +1,5 @@
 package at.brandl.finance.gui.components;
-
+import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -123,30 +123,30 @@ public class FilterComposite extends Composite {
 		labelSelection.pack();
 
 		confirmedCheck = new Button(this, SWT.CHECK);
-		confirmedCheck.setText("confirmed");
+		confirmedCheck.setText(getLocalized("Confirmed"));
 		confirmedCheck.pack();
 
 		unconfirmedCheck = new Button(this, SWT.CHECK);
-		unconfirmedCheck.setText("unconfirmed");
+		unconfirmedCheck.setText(getLocalized("Unconfirmed"));
 		unconfirmedCheck.pack();
 
 		expensesCheck = new Button(this, SWT.CHECK);
-		expensesCheck.setText("expenses");
+		expensesCheck.setText(getLocalized("Expenses"));
 		expensesCheck.pack();
 
 		incomeCheck = new Button(this, SWT.CHECK);
-		incomeCheck.setText("income");
+		incomeCheck.setText(getLocalized("Income"));
 		incomeCheck.pack();
 
 		trainingDataCheck = new Button(this, SWT.CHECK);
-		trainingDataCheck.setText("training set");
+		trainingDataCheck.setText(getLocalized("TrainingSet"));
 		trainingDataCheck.pack();
 
 		searchField = new Text(this, SWT.SINGLE);
 		GridData searchLayoutData = new GridData(SWT.FILL, SWT.CENTER, true, false);
 		searchLayoutData.widthHint = 180;
 		searchField.setLayoutData(searchLayoutData);
-		searchField.setMessage("search text");
+		searchField.setMessage(getLocalized("SearchText"));
 		searchField.pack();
 		
 		filters.add(new LabelFilter());
@@ -190,7 +190,7 @@ public class FilterComposite extends Composite {
 		String labelFilterText = labelSelection.getText();
 
 		labelSelection.removeAll();
-		labelSelection.add("- select a label -");
+		labelSelection.add(getLocalized("SelectLabel"));
 
 		if (labels != null) {
 			for (String label : labels) {
@@ -200,7 +200,7 @@ public class FilterComposite extends Composite {
 		if(StringUtils.isNotBlank(labelFilterText)) {
 			labelSelection.setText(labelFilterText);
 		} else {
-			labelSelection.setText("- select a label -");
+			labelSelection.setText(getLocalized("SelectLabel"));
 		}
 	}
 
