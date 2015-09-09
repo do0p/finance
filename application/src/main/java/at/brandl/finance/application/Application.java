@@ -58,6 +58,8 @@ public class Application {
 
 	public static interface TrainingListener {
 
+		void onTrainingStarted();
+		
 		void onTrainingFinished();
 	}
 
@@ -344,6 +346,10 @@ public class Application {
 
 	private void notifyListners(FutureTask<LinearModel> future, NodeGenerator nodeGenerator, StringWriter out) {
 
+		for (TrainingListener listener : trainingListeners) {
+			listener.onTrainingStarted();
+		}
+		
 		new Thread(new Runnable() {
 
 			@Override

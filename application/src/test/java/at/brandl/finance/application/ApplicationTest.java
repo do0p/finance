@@ -127,6 +127,12 @@ public class ApplicationTest {
 				application.removeTrainListener(this);
 				futureTask.run();
 			}
+
+			@Override
+			public void onTrainingStarted() {
+				// TODO Auto-generated method stub
+				
+			}
 		});
 
 		train();

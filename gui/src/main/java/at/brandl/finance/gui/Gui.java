@@ -1,10 +1,13 @@
 package at.brandl.finance.gui;
 
 import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
+
 import java.io.IOException;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
+import org.eclipse.swt.events.SelectionEvent;
+import org.eclipse.swt.events.SelectionListener;
 import org.eclipse.swt.graphics.Rectangle;
 import org.eclipse.swt.layout.GridData;
 import org.eclipse.swt.layout.GridLayout;
@@ -46,7 +49,7 @@ public class Gui implements TrainingListener {
 		createToolBar();
 
 		createTable();
-		
+
 		createStatusBar();
 
 		try {
@@ -57,8 +60,6 @@ public class Gui implements TrainingListener {
 		}
 	}
 
-	
-
 	public static void main(String[] args) {
 
 		new Gui();
@@ -66,22 +67,15 @@ public class Gui implements TrainingListener {
 
 	private void trainSelected() {
 
-		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application, table.getSelection());
+		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application,
+				table.getSelection());
 		trainDataPopup.open();
-		if(application.isTrainingRunning()) {
-			statusField.setText(getLocalized("InProgress"));
-			statusField.pack();
-		}
 	}
 
 	private void trainAll() {
 
 		TrainDataPopup trainDataPopup = new TrainDataPopup(shell, application);
 		trainDataPopup.open();
-		if(application.isTrainingRunning()) {
-			statusField.setText(getLocalized("InProgress"));
-			statusField.pack();
-		}
 	}
 
 	private void export() {
@@ -161,7 +155,8 @@ public class Gui implements TrainingListener {
 
 	private void createUnsafedProjectMessage() {
 
-		MessageBox dialog = new MessageBox(shell, SWT.ICON_QUESTION | SWT.YES | SWT.NO);
+		MessageBox dialog = new MessageBox(shell, SWT.ICON_QUESTION | SWT.YES
+				| SWT.NO);
 		dialog.setText("Unsafed Project");
 		dialog.setMessage("There are unsafed changes. Save current project?");
 		int answer = dialog.open();
@@ -182,15 +177,26 @@ public class Gui implements TrainingListener {
 			application.saveToFile(open);
 		}
 	}
-	
+
 	private void refresh() {
 		table.refresh();
-		if(!application.isTrainingRunning()) {
+		if (!application.isTrainingRunning()) {
 			statusField.setText(" ");
 			statusField.pack();
 		}
 	}
 
+
+	@Override
+	public void onTrainingStarted() {
+		
+		if (application.isTrainingRunning()) {
+			statusField.setText(getLocalized("InProgress"));
+			statusField.pack();
+		}
+	}
+
+	
 	@Override
 	public void onTrainingFinished() {
 
@@ -207,7 +213,8 @@ public class Gui implements TrainingListener {
 		});
 	}
 
-	private FileDialog createFileDialog(int style, String filterName, String extension) {
+	private FileDialog createFileDialog(int style, String filterName,
+			String extension) {
 
 		FileDialog dialog = new FileDialog(shell, style);
 		dialog.setFilterNames(new String[] { filterName });
@@ -236,20 +243,27 @@ public class Gui implements TrainingListener {
 		application.addTrainListener(this);
 	}
 
-	
 	private void createStatusBar() {
-	
+
 		statusField = new Label(shell, SWT.SHADOW_IN | SWT.RIGHT);
 		statusField.setText(" ");
 		statusField.pack();
-		statusField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
+		statusField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
+				false));
 	}
-	
+
 	private void createTable() {
 
 		table = new DataTable(shell, application);
-		table.addTableSelectionListener(new Listener() {
-			public void handleEvent(Event e) {
+		table.addTableSelectionListener(new SelectionListener() {
+
+			@Override
+			public void widgetSelected(SelectionEvent e) {
+				//
+			}
+
+			@Override
+			public void widgetDefaultSelected(SelectionEvent e) {
 				trainSelected();
 			}
 		});
@@ -352,7 +366,6 @@ public class Gui implements TrainingListener {
 				refresh();
 			}
 
-
 		});
 
 		toolBar.pack();
@@ -388,7 +401,7 @@ public class Gui implements TrainingListener {
 			} catch (ProjectWithUnsafedChangesException e) {
 				createUnsafedProjectMessage();
 			} catch (RuntimeException e) {
-				
+
 				e.printStackTrace(System.err);
 				display.dispose();
 			}
