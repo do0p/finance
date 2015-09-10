@@ -134,6 +134,7 @@ public class CsvReader implements FinanceDataReader {
 		if (column.startsWith("\"") && column.endsWith("\"")) {
 			column = column.substring(1, column.length() - 1);
 		}
+		column = column.replaceAll("\\s+", " ");
 		return column;
 	}
 

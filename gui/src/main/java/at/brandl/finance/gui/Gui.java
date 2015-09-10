@@ -134,14 +134,14 @@ public class Gui implements TrainingListener {
 				for (Line line : application.getUnlabeledLines()) {
 					application.predict(line);
 				}
-				// shell.layout();
-
-				refresh();
+				
 			} catch (UntrainedProjectException e) {
 				// ignore this case
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+			
+			refresh();
 		}
 	}
 
