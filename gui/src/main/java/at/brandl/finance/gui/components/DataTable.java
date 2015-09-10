@@ -2,6 +2,7 @@ package at.brandl.finance.gui.components;
 
 import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
 
+import java.math.BigDecimal;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -41,6 +42,7 @@ public class DataTable extends Composite {
 	private Application application;
 	private FilterComposite filtersComposite;
 	private Table table;
+	private BigDecimal sum = new BigDecimal(0);
 
 	public DataTable(Shell parent, Application application) {
 		super(parent, SWT.NONE);
@@ -171,9 +173,12 @@ public class DataTable extends Composite {
 
 		table.removeAll();
 
+		BigDecimal tmpSum = new BigDecimal(0);
 		for (Line line : application.getLines(filtersComposite.getFilters())) {
 			createItem(line);
+			tmpSum = tmpSum.add(line.getAmount());
 		}
+		sum = tmpSum;
 
 		for (int i = 0; i < 7; i++) {
 			table.getColumn(i).pack();
@@ -254,6 +259,11 @@ public class DataTable extends Composite {
 			lines.add((Line) table.getItem(index).getData());
 		}
 		return lines;
+	}
+
+	public BigDecimal getSum() {
+		
+		return sum;
 	}
 	
 }

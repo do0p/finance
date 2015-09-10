@@ -14,7 +14,6 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Display;
 import org.eclipse.swt.widgets.Event;
 import org.eclipse.swt.widgets.FileDialog;
-import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Menu;
 import org.eclipse.swt.widgets.MenuItem;
@@ -30,13 +29,14 @@ import at.brandl.finance.application.error.ProjectWithUnsafedChangesException;
 import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Line;
 import at.brandl.finance.gui.components.DataTable;
+import at.brandl.finance.gui.components.StatusBar;
 
 public class Gui implements TrainingListener {
 
 	private Shell shell;
 	private Application application;
 	private DataTable table;
-	private Label statusField;
+	private StatusBar statusBar;
 
 	public Gui() {
 
@@ -179,10 +179,12 @@ public class Gui implements TrainingListener {
 	}
 
 	private void refresh() {
+		
 		table.refresh();
+		statusBar.setSum(table.getSum());
 		if (!application.isTrainingRunning()) {
-			statusField.setText(" ");
-			statusField.pack();
+			statusBar.setStatus(" ");
+			statusBar.pack();
 		}
 	}
 
@@ -191,8 +193,8 @@ public class Gui implements TrainingListener {
 	public void onTrainingStarted() {
 		
 		if (application.isTrainingRunning()) {
-			statusField.setText(getLocalized("InProgress"));
-			statusField.pack();
+			statusBar.setStatus(getLocalized("InProgress"));
+			statusBar.pack();
 		}
 	}
 
@@ -245,10 +247,10 @@ public class Gui implements TrainingListener {
 
 	private void createStatusBar() {
 
-		statusField = new Label(shell, SWT.SHADOW_IN | SWT.RIGHT);
-		statusField.setText(" ");
-		statusField.pack();
-		statusField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
+		statusBar = new StatusBar(shell);
+		statusBar.setStatus(" ");
+		statusBar.pack();
+		statusBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
 				false));
 	}
 
