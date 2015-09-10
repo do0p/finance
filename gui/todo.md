@@ -1,5 +1,8 @@
 **TODOs**
 
-* Internationalization
-* Remove from training set
+* remove duplicate spaces
+* show sums
+* filter by date
+* reduce theta size
+* show graphs
 
