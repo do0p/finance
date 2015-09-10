@@ -41,7 +41,7 @@ public class CsvReaderTest {
 		assertEquals(-52.44, line.getAmount().doubleValue(), 0);
 		assertEquals(Arrays.asList("at", "maestro", "pos", "bp",
 				"hainfelderstr", "boeheimkirche"), line.getWords());
-		assertEquals("AT    52,44 MAESTRO POS 27.03.15 18.29K6 O BP HAINFELDERSTR.      BOEHEIMKIRCHE 3071", line.getText("Buchungstext"));
+		assertEquals("AT 52,44 MAESTRO POS 27.03.15 18.29K6 O BP HAINFELDERSTR. BOEHEIMKIRCHE 3071", line.getText("Buchungstext"));
 		assertEquals(new Date(1427666400000l), line.getDate());
 	}
 
