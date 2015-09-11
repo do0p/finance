@@ -3,10 +3,11 @@ package at.brandl.finance.gui.components;
 import java.math.BigDecimal;
 
 import org.eclipse.swt.SWT;
-import org.eclipse.swt.layout.GridData;
-import org.eclipse.swt.layout.GridLayout;
+import org.eclipse.swt.layout.RowLayout;
 import org.eclipse.swt.widgets.Composite;
 import org.eclipse.swt.widgets.Label;
+
+import at.brandl.finance.gui.LocalizationUtil;
 
 public class StatusBar extends Composite {
 
@@ -16,30 +17,37 @@ public class StatusBar extends Composite {
 	public StatusBar(Composite parent) {
 		super(parent, SWT.NONE);
 
-		GridLayout layout = new GridLayout(2, false);
+		RowLayout layout = new RowLayout();
+		layout.spacing = 12;
 		setLayout(layout);
 
+		Label sumLabel = new Label(this, SWT.NONE);
+		sumLabel.setText(LocalizationUtil.getLocalized("Sum") + ":");
+		
 		sumField = new Label(this, SWT.SHADOW_IN | SWT.RIGHT);
 		sumField.setText(" ");
 		sumField.pack();
-		sumField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false));
 
+		Label statusLabel = new Label(this, SWT.NONE);
+		statusLabel.setText(LocalizationUtil.getLocalized("Status") + ":");
+		
 		statusField = new Label(this, SWT.SHADOW_IN | SWT.RIGHT);
 		statusField.setText(" ");
 		statusField.pack();
-		statusField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
-				false));
 
 		pack();
-
 	}
 
 	public void setStatus(String status) {
 		statusField.setText(status);
+		statusField.pack();
+		pack();
 	}
 
 	public void setSum(BigDecimal sum) {
 		sumField.setText(String.format("%,.2f", sum.doubleValue()));
+		sumField.pack();
+		pack();
 	}
 
 }

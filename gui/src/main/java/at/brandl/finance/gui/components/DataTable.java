@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.events.SelectionListener;
@@ -32,6 +33,11 @@ import at.brandl.finance.reader.FinanceDataReader;
 
 public class DataTable extends Composite {
 
+	public static interface StatusListener {
+		
+		void onStatusChanged();
+	}
+	
 	private static final String COLUMN_NAME = "name";
 	private final DateFormat dateFormat = new SimpleDateFormat("dd.MM.yyyy");
 	private static final String[] TITLES = { Journal.LABEL, Journal.CONFIDENCE,
@@ -43,6 +49,7 @@ public class DataTable extends Composite {
 	private FilterComposite filtersComposite;
 	private Table table;
 	private BigDecimal sum = new BigDecimal(0);
+	private Collection<StatusListener> statusListeners = new CopyOnWriteArrayList<>();
 
 	public DataTable(Shell parent, Application application) {
 		super(parent, SWT.NONE);
@@ -183,8 +190,16 @@ public class DataTable extends Composite {
 		for (int i = 0; i < 7; i++) {
 			table.getColumn(i).pack();
 		}
+		
+		for(StatusListener listener : statusListeners) {
+			listener.onStatusChanged();
+		}
 	}
 
+	public void addStatusListener(StatusListener listener) {
+		statusListeners.add(listener);
+	}
+	
 	private void createItem(Line line) {
 
 		TableItem item = new TableItem(table, SWT.NONE);

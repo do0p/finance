@@ -30,8 +30,9 @@ import at.brandl.finance.application.error.UntrainedProjectException;
 import at.brandl.finance.common.Line;
 import at.brandl.finance.gui.components.DataTable;
 import at.brandl.finance.gui.components.StatusBar;
+import at.brandl.finance.gui.components.DataTable.StatusListener;
 
-public class Gui implements TrainingListener {
+public class Gui implements TrainingListener, StatusListener {
 
 	private Shell shell;
 	private Application application;
@@ -181,11 +182,6 @@ public class Gui implements TrainingListener {
 	private void refresh() {
 		
 		table.refresh();
-		statusBar.setSum(table.getSum());
-		if (!application.isTrainingRunning()) {
-			statusBar.setStatus(" ");
-			statusBar.pack();
-		}
 	}
 
 
@@ -215,6 +211,17 @@ public class Gui implements TrainingListener {
 		});
 	}
 
+
+	@Override
+	public void onStatusChanged() {
+	
+		statusBar.setSum(table.getSum());
+		if (!application.isTrainingRunning()) {
+			statusBar.setStatus(" ");
+			statusBar.pack();
+		}
+	}
+	
 	private FileDialog createFileDialog(int style, String filterName,
 			String extension) {
 
@@ -249,9 +256,9 @@ public class Gui implements TrainingListener {
 
 		statusBar = new StatusBar(shell);
 		statusBar.setStatus(" ");
-		statusBar.pack();
 		statusBar.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true,
 				false));
+		statusBar.pack();
 	}
 
 	private void createTable() {
@@ -270,6 +277,8 @@ public class Gui implements TrainingListener {
 			}
 		});
 		table.setLayoutData(new GridData(SWT.FILL, SWT.FILL, true, true));
+		table.addStatusListener(this);
+		table.pack();
 	}
 
 	private void createMenuBar() {
@@ -408,6 +417,5 @@ public class Gui implements TrainingListener {
 				display.dispose();
 			}
 		}
-
 	}
 }
