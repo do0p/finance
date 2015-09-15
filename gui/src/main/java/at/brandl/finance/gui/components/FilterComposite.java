@@ -1,7 +1,12 @@
 package at.brandl.finance.gui.components;
+
 import static at.brandl.finance.gui.LocalizationUtil.getLocalized;
+
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collection;
+import java.util.Date;
+import java.util.GregorianCalendar;
 
 import org.apache.commons.lang3.StringUtils;
 import org.eclipse.swt.SWT;
@@ -10,6 +15,8 @@ import org.eclipse.swt.layout.GridLayout;
 import org.eclipse.swt.widgets.Button;
 import org.eclipse.swt.widgets.Combo;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.swt.widgets.DateTime;
+import org.eclipse.swt.widgets.Label;
 import org.eclipse.swt.widgets.Listener;
 import org.eclipse.swt.widgets.Text;
 
@@ -19,12 +26,17 @@ import at.brandl.finance.reader.FinanceDataReader;
 
 public class FilterComposite extends Composite {
 
+	private final int currentYear = new GregorianCalendar().get(Calendar.YEAR);
+	private final int DEFAULT_END_YEAR = currentYear;
+	private final int DEFAULT_START_YEAR = currentYear;
+
 	private class LabelFilter implements Filter {
 
 		@Override
 		public boolean accept(Line line) {
 
-			if (StringUtils.isBlank(labelSelection.getText()) || labelSelection.getText().startsWith("-")) {
+			if (StringUtils.isBlank(labelSelection.getText())
+					|| labelSelection.getText().startsWith("-")) {
 				return true;
 			}
 
@@ -99,20 +111,50 @@ public class FilterComposite extends Composite {
 		}
 
 		private boolean matches(String text, String searchText) {
-			return text != null && text.toLowerCase().contains(searchText.toLowerCase());
+			return text != null
+					&& text.toLowerCase().contains(searchText.toLowerCase());
+		}
+
+	};
+
+	private class DateFilter implements Filter {
+
+		@Override
+		public boolean accept(Line line) {
+
+			Date startDate = getDate(startDateField);
+			Date endDate = getDate(endDateField);
+			Date date = line.getDate();
+
+			return !(date.before(startDate) || date.after(endDate));
+
+		}
+
+		private Date getDate(DateTime dateField) {
+
+			int year = dateField.getYear();
+			int month = dateField.getMonth();
+			int day = dateField.getDay();
+
+			Calendar cal = new GregorianCalendar();
+			cal.clear();
+			cal.set(year, month, day);
+			return cal.getTime();
 		}
 
 	};
 
 	private final Collection<Filter> filters = new ArrayList<Filter>();
-	private Button confirmedCheck, unconfirmedCheck, expensesCheck, incomeCheck, trainingDataCheck;
+	private Button confirmedCheck, unconfirmedCheck, expensesCheck,
+			incomeCheck, trainingDataCheck;
+	private DateTime startDateField, endDateField;
 	private Text searchField;
 	private Combo labelSelection;
 
 	public FilterComposite(Composite parent) {
 		super(parent, SWT.NONE);
 
-		GridLayout layout = new GridLayout(7, false);
+		GridLayout layout = new GridLayout(11, false);
 		layout.horizontalSpacing = 7;
 		setLayout(layout);
 
@@ -142,17 +184,40 @@ public class FilterComposite extends Composite {
 		trainingDataCheck.setText(getLocalized("TrainingSet"));
 		trainingDataCheck.pack();
 
+		Label startDateLabel = new Label(this, SWT.NONE);
+		startDateLabel.setText(getLocalized("from"));
+		startDateLabel.pack();
+		
+		startDateField = new DateTime(this, SWT.DATE | SWT.MEDIUM
+				| SWT.DROP_DOWN);
+		startDateField.setYear(DEFAULT_START_YEAR);
+		startDateField.setMonth(0);
+		startDateField.setDay(1);
+		startDateField.pack();
+
+		Label endDateLabel = new Label(this, SWT.NONE);
+		endDateLabel.setText(getLocalized("to"));
+		endDateLabel.pack();
+		
+		endDateField = new DateTime(this, SWT.DATE | SWT.MEDIUM | SWT.DROP_DOWN);
+		endDateField.setYear(DEFAULT_END_YEAR);
+		endDateField.setMonth(11);
+		endDateField.setDay(31);
+		endDateField.pack();
+
 		searchField = new Text(this, SWT.SINGLE);
-		GridData searchLayoutData = new GridData(SWT.FILL, SWT.CENTER, true, false);
+		GridData searchLayoutData = new GridData(SWT.FILL, SWT.CENTER, true,
+				false);
 		searchLayoutData.widthHint = 180;
 		searchField.setLayoutData(searchLayoutData);
 		searchField.setMessage(getLocalized("SearchText"));
 		searchField.pack();
-		
+
 		filters.add(new LabelFilter());
 		filters.add(new ExpensesFilter());
 		filters.add(new ConfirmedFilter());
 		filters.add(new TextFilter());
+		filters.add(new DateFilter());
 
 		init();
 
@@ -172,13 +237,15 @@ public class FilterComposite extends Composite {
 	}
 
 	public void addListener(Listener listener) {
-		labelSelection.addListener(SWT.Selection , listener);
+		labelSelection.addListener(SWT.Selection, listener);
 		confirmedCheck.addListener(SWT.Selection, listener);
 		unconfirmedCheck.addListener(SWT.Selection, listener);
 		expensesCheck.addListener(SWT.Selection, listener);
 		incomeCheck.addListener(SWT.Selection, listener);
 		trainingDataCheck.addListener(SWT.Selection, listener);
 		searchField.addListener(SWT.Modify, listener);
+		startDateField.addListener(SWT.Selection, listener);
+		endDateField.addListener(SWT.Selection, listener);
 	}
 
 	public Collection<Filter> getFilters() {
@@ -197,7 +264,7 @@ public class FilterComposite extends Composite {
 				labelSelection.add(label);
 			}
 		}
-		if(StringUtils.isNotBlank(labelFilterText)) {
+		if (StringUtils.isNotBlank(labelFilterText)) {
 			labelSelection.setText(labelFilterText);
 		} else {
 			labelSelection.setText(getLocalized("SelectLabel"));
